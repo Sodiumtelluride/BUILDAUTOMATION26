@@ -23,8 +23,8 @@ export default async function FactoryPage() {
               <span className="text-xs text-zinc-500">{p.status}</span>
             </div>
             <p className="mt-1 text-sm text-zinc-600">Stage: {p.currentStage ?? "Not started"}</p>
-            <div className="mt-3 h-2 rounded bg-zinc-200">
-              <div className="h-2 rounded bg-black" style={{ width: `${p.percentDone}%` }} />
+            <div className="mt-3 h-2 rounded bg-zinc-200 dark:bg-zinc-800">
+              <div className="h-2 rounded bg-emerald-500" style={{ width: `${p.percentDone}%` }} />
             </div>
             <p className="mt-1 text-xs text-zinc-500">{p.percentDone}% done</p>
             <dl className="mt-3 grid grid-cols-2 gap-1 text-sm">
