@@ -5,7 +5,7 @@ export default auth(function proxy(req) {
   const { pathname } = req.nextUrl
   const session = req.auth
 
-  const publicPaths = ["/", "/login", "/signup"]
+  const publicPaths = ["/", "/login", "/signup", "/intake"]
   const isPublic = publicPaths.some(
     (p) => pathname === p || pathname.startsWith(p + "/")
   )
