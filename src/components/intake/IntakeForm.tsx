@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Upload, X } from "lucide-react";
+import Link from "next/link";
+import { Check, ChevronLeft, ChevronRight, LoaderCircle, Upload, X } from "lucide-react";
+import { IntakeSubmissionError, submitIntake } from "./submission";
 import {
   CONTENT_OPTIONS,
   CONTENT_PARTIAL,
@@ -31,7 +33,7 @@ const SECTION_TITLES = [
   "Design & Branding",
   "Content",
   "Technical Details",
-  "Additional Information",
+  "Review & Submit",
 ];
 
 const initialFormData: IntakeFormData = {
@@ -77,7 +79,7 @@ type SectionProps = {
 const fieldId = (key: string) => key.replace(/\./g, "-");
 
 const inputClass = (hasError: boolean) =>
-  `w-full bg-white text-gray-900 rounded-xl px-4 py-3 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#DC4436] ${
+  `min-w-0 w-full bg-white text-gray-900 rounded-xl px-4 py-3 text-base placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#DC4436] ${
     hasError ? "ring-2 ring-[#DC4436]" : ""
   }`;
 
@@ -144,6 +146,7 @@ function FieldInput({
   maxLength,
   hint,
   error,
+  autoComplete,
 }: {
   name: string;
   label: string;
@@ -155,6 +158,7 @@ function FieldInput({
   maxLength?: number;
   hint?: string;
   error?: string;
+  autoComplete?: string;
 }) {
   const id = fieldId(name);
   return (
@@ -162,7 +166,9 @@ function FieldInput({
       <FieldLabel htmlFor={id} label={label} required={required} />
       <input
         id={id}
+        name={name}
         type={type}
+        autoComplete={autoComplete}
         value={value}
         maxLength={maxLength}
         onChange={(e) => onChange(e.target.value)}
@@ -209,6 +215,7 @@ function FieldTextarea({
       <FieldLabel htmlFor={id} label={label} required={required} />
       <textarea
         id={id}
+        name={name}
         value={value}
         maxLength={maxLength}
         onChange={(e) => onChange(e.target.value)}
@@ -217,7 +224,7 @@ function FieldTextarea({
         aria-required={required || undefined}
         aria-invalid={!!error || undefined}
         aria-describedby={describedBy(hint && `${id}-hint`, error && `${id}-error`)}
-        className={`${inputClass(!!error)} resize-none`}
+        className={`${inputClass(!!error)} resize-y min-h-28`}
       />
       <div className="flex justify-between gap-3">
         <div>
@@ -225,7 +232,7 @@ function FieldTextarea({
           <FieldError id={`${id}-error`} message={error} />
         </div>
         {maxLength && (
-          <p className="text-xs text-gray-500 mt-1 flex-shrink-0">
+          <p className="text-xs text-gray-400 mt-1 flex-shrink-0">
             {minLength && value.trim().length < minLength
               ? `${value.trim().length}/${minLength} min`
               : `${value.length}/${maxLength}`}
@@ -262,6 +269,7 @@ function FieldSelect({
       <div className="relative">
         <select
           id={id}
+          name={name}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           aria-required={required || undefined}
@@ -340,7 +348,7 @@ function FieldMultiSelect({
               onClick={() => toggle(opt)}
               aria-pressed={isSelected}
               disabled={disabled}
-              className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#DC4436] disabled:opacity-40 disabled:cursor-not-allowed ${
+              className={`min-h-11 px-4 py-2 rounded-full border text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#DC4436] disabled:opacity-40 disabled:cursor-not-allowed ${
                 isSelected
                   ? "bg-white text-black border-white"
                   : "bg-transparent text-white border-white/70 hover:border-white hover:bg-white/10"
@@ -414,7 +422,7 @@ function FieldFileUpload({
         <span className="text-white text-sm text-center">
           {multiple ? "Choose files" : files.length ? "Replace file" : "Choose a file"}
         </span>
-        <span id={`${id}-accept`} className="text-gray-500 text-xs text-center mt-1">
+        <span id={`${id}-accept`} className="text-gray-400 text-xs text-center mt-1">
           {rules.extensions.join(", ")} · max {rules.maxSizeMB}MB
           {multiple ? ` each · up to ${rules.maxFiles} files` : ""}
         </span>
@@ -439,9 +447,12 @@ function FieldFileUpload({
               <span className="truncate">{f.name}</span>
               <button
                 type="button"
-                onClick={() => onFiles(files.filter((_, j) => j !== i))}
+                onClick={() => {
+                  onFiles(files.filter((_, j) => j !== i));
+                  onError(null);
+                }}
                 aria-label={`Remove ${f.name}`}
-                className="text-gray-400 hover:text-white flex-shrink-0"
+                className="min-h-11 min-w-11 flex items-center justify-center text-gray-300 hover:text-white flex-shrink-0 rounded-lg focus-visible:outline-2 focus-visible:outline-white"
               >
                 <X size={16} />
               </button>
@@ -499,6 +510,7 @@ function Section1({ data, set, errors }: SectionProps) {
         label="Organization Name"
         required
         maxLength={100}
+        autoComplete="organization"
         value={data.organizationName}
         onChange={(v) => set("organizationName", v)}
         placeholder="e.g., BUILD UMass"
@@ -510,6 +522,7 @@ function Section1({ data, set, errors }: SectionProps) {
         label="Primary Contact Name"
         required
         maxLength={100}
+        autoComplete="name"
         value={data.primaryContactName}
         onChange={(v) => set("primaryContactName", v)}
         placeholder="e.g., John Smith"
@@ -521,10 +534,12 @@ function Section1({ data, set, errors }: SectionProps) {
         label="Primary Contact Email"
         required
         type="email"
+        maxLength={254}
+        autoComplete="email"
         value={data.primaryContactEmail}
         onChange={(v) => set("primaryContactEmail", v)}
         placeholder="e.g., johnsmith@email.com"
-        hint="We'll send your confirmation, preview link, and final site here."
+        hint="BUILD will use this address to follow up about your project."
         error={errors.primaryContactEmail}
       />
       <FieldSelect
@@ -644,6 +659,7 @@ function Section3({ data, set, errors, setFieldError }: SectionProps) {
       <FieldInput
         name="brandColors"
         label="Brand Colors"
+        maxLength={200}
         value={data.brandColors}
         onChange={(v) => set("brandColors", v)}
         placeholder="e.g., #1A3C6E, #C9A84C, white"
@@ -692,7 +708,7 @@ function Section3({ data, set, errors, setFieldError }: SectionProps) {
                     setFieldError(key, null);
                   }}
                   placeholder="example.com"
-                  aria-labelledby="referenceWebsites-label"
+                  aria-label={`Reference website ${i + 1}`}
                   aria-invalid={!!errors[key] || undefined}
                   aria-describedby={errors[key] ? `${id}-error` : undefined}
                   className={`flex-1 ${inputClass(!!errors[key])}`}
@@ -706,7 +722,7 @@ function Section3({ data, set, errors, setFieldError }: SectionProps) {
                     setFieldError(key, null);
                   }}
                   aria-label={`Clear reference website ${i + 1}`}
-                  className="text-gray-500 hover:text-white transition-colors flex-shrink-0"
+                  className="min-h-11 min-w-11 rounded-lg flex items-center justify-center text-gray-300 hover:text-white transition-colors flex-shrink-0 focus-visible:outline-2 focus-visible:outline-white"
                 >
                   <X size={18} />
                 </button>
@@ -743,12 +759,12 @@ function Section4({ data, set, errors, setFieldError }: SectionProps) {
           <FieldTextarea
             name="existingContent"
             label="Paste your existing content"
-            required
+            required={data.contentFiles.length === 0}
             maxLength={5000}
             value={data.existingContent}
             onChange={(v) => set("existingContent", v)}
             placeholder="Paste any text you want used or referenced..."
-            hint="This can be rough. It will be edited and formatted."
+            hint="Paste text or upload a document below. Rough drafts are welcome."
             error={errors.existingContent}
           />
           <FieldFileUpload
@@ -810,6 +826,7 @@ function Section5({ data, set, errors }: SectionProps) {
           name="domainName"
           label="Domain Name"
           required
+          maxLength={253}
           value={data.domainName}
           onChange={(v) => set("domainName", v)}
           placeholder="example.org"
@@ -831,8 +848,8 @@ function Section5({ data, set, errors }: SectionProps) {
         maxLength={500}
         value={data.integrationDetails}
         onChange={(v) => set("integrationDetails", v)}
-        placeholder="Account IDs, embed codes, integration notes..."
-        hint="Leave blank and BUILD will follow up."
+        placeholder="Which tools should connect, and how will you use them?"
+        hint="Do not include passwords or secret API keys. BUILD will follow up about access."
         error={errors.integrationDetails}
       />
     </>
@@ -856,18 +873,73 @@ function Section6({ data, set, errors }: SectionProps) {
 
 const SECTIONS = [Section1, Section2, Section3, Section4, Section5, Section6];
 
-function SuccessScreen() {
+function ReviewAnswers({ data, onEdit }: { data: IntakeFormData; onEdit: (section: number) => void }) {
+  const groups: { title: string; rows: [string, string][] }[] = [
+    { title: SECTION_TITLES[0], rows: [
+      ["Organization", data.organizationName], ["Contact", `${data.primaryContactName} · ${data.primaryContactEmail}`], ["Type", data.organizationType],
+    ] },
+    { title: SECTION_TITLES[1], rows: [
+      ["Goal", data.primaryGoal], ["About", data.organizationDescription], ["Audience", data.targetAudience],
+      ["Pages", data.pages.join(", ")], ["Features", data.features.join(", ")], ["Feature details", data.featureDetails],
+    ] },
+    { title: SECTION_TITLES[2], rows: [
+      ["Logo", data.hasLogo === LOGO_UPLOAD ? data.logoFile?.name ?? "" : data.hasLogo],
+      ["Colors", data.brandColors], ["Fonts", data.brandFonts], ["Style", data.visualStyle], ["References", data.referenceWebsites.filter(Boolean).join(", ")],
+    ] },
+    { title: SECTION_TITLES[3], rows: [
+      ["Content", data.hasContent],
+      ...((data.hasContent === CONTENT_YES || data.hasContent === CONTENT_PARTIAL)
+        ? [["Existing text", data.existingContent], ["Documents", data.contentFiles.map((file) => file.name).join(", ")]] as [string, string][]
+        : []),
+      ["Tone", data.toneAndVoice.join(", ")], ["Avoid", data.contentRestrictions],
+    ] },
+    { title: SECTION_TITLES[4], rows: [
+      ["Domain", data.hasDomain === DOMAIN_OWNED ? data.domainName : data.hasDomain],
+      ["Integrations", data.integrations.join(", ")], ["Integration details", data.integrationDetails],
+    ] },
+  ];
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-6 text-center">
+    <div className="mt-8 border-t border-white/15 pt-6">
+      <h2 className="text-xl font-semibold text-white">Review your project</h2>
+      <p className="mt-2 text-sm leading-relaxed text-gray-300">Check your answers before sending them to BUILD. You can edit any section.</p>
+      <div className="mt-5 space-y-3">
+        {groups.map((group, index) => (
+          <details key={group.title} className="rounded-xl border border-white/15 bg-black/15">
+            <summary className="cursor-pointer px-4 py-4 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-white rounded-xl">{group.title}</summary>
+            <div className="px-4 pb-4">
+              <dl className="space-y-3">
+                {group.rows.filter(([, value]) => value.trim()).map(([label, value]) => (
+                  <div key={label}>
+                    <dt className="text-xs font-medium text-gray-400">{label}</dt>
+                    <dd className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-100">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              <button type="button" onClick={() => onEdit(index)} className="mt-3 min-h-11 rounded-lg px-3 text-sm font-semibold text-white underline underline-offset-4 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white">Edit {group.title}</button>
+            </div>
+          </details>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SuccessScreen({ referenceNo }: { referenceNo: string }) {
+  return (
+    <main className="min-h-dvh bg-black flex flex-col items-center justify-center px-6 py-12 text-center">
       <div className="w-20 h-20 rounded-full bg-[#DC4436] flex items-center justify-center mb-8">
         <Check size={40} className="text-white" aria-hidden="true" />
       </div>
-      <h1 className="text-5xl font-black text-white mb-4 tracking-tight">Form Submitted!</h1>
-      <p className="text-gray-400 text-base max-w-sm leading-relaxed">
+      <h1 tabIndex={-1} ref={(element) => element?.focus()} className="text-4xl sm:text-5xl font-black text-white mb-4 tracking-tight outline-none">Project received.</h1>
+      <p className="text-gray-300 text-base max-w-sm leading-relaxed">
         Thank you for submitting your intake form. The BUILD UMass team will review your
         project and get back to you soon.
       </p>
-    </div>
+      <p className="mt-8 text-sm text-gray-400">Your reference number</p>
+      <p className="mt-2 rounded-xl border border-white/20 px-5 py-3 font-mono text-lg text-white">{referenceNo}</p>
+      <p className="mt-4 max-w-sm text-sm leading-relaxed text-gray-400">Keep this number for your records. We will contact you at the email address you provided.</p>
+      <Link href="/" className="mt-8 min-h-11 rounded-full px-5 py-3 text-sm font-semibold text-white underline underline-offset-4 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white">Back to BUILD</Link>
+    </main>
   );
 }
 
@@ -875,30 +947,31 @@ function SuccessScreen() {
 
 export function IntakeForm() {
   const [section, setSection] = useState(0);
-  const [submitted, setSubmitted] = useState(false);
+  const [referenceNo, setReferenceNo] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [formData, setFormData] = useState<IntakeFormData>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
-  // Bumped whenever validation fails, so we move focus to the first bad field.
-  const [focusRequest, setFocusRequest] = useState(0);
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  // TODO(next PR): auto-save drafts every 60s and "Save and continue later"
-  // (PRD 2.1). Needs a backend endpoint, so it isn't implemented here yet.
+  const [focusTarget, setFocusTarget] = useState<{ key: string } | null>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const submittingRef = useRef(false);
 
   useEffect(() => {
-    if (focusRequest === 0) return;
-    const firstKey = Object.keys(errors)[0];
-    if (firstKey) document.getElementById(fieldId(firstKey))?.focus();
-    // Only run when a new focus request is made, not on every error change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusRequest]);
+    if (focusTarget) document.getElementById(fieldId(focusTarget.key))?.focus();
+    else headingRef.current?.focus();
+  }, [focusTarget, section]);
 
   const set: SetField = (key, value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => {
-      if (!(key in prev)) return prev;
       const next = { ...prev };
       delete next[key as string];
+      if (key === "hasLogo" && value !== LOGO_UPLOAD) delete next.logoFile;
+      if (key === "hasContent" && value !== CONTENT_YES && value !== CONTENT_PARTIAL) {
+        delete next.existingContent;
+        delete next.contentFiles;
+      }
+      if (key === "hasDomain" && value !== DOMAIN_OWNED) delete next.domainName;
       return next;
     });
   };
@@ -914,12 +987,14 @@ export function IntakeForm() {
 
   const goTo = (i: number) => {
     setSection(i);
-    cardRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    setFocusTarget(null);
   };
 
   // Moving backward is always allowed. Moving forward validates every
   // section in between and stops at the first one with problems.
   const navigateTo = (target: number) => {
+    if (submittingRef.current) return;
+    setSubmitError(null);
     if (target <= section) {
       setErrors({});
       goTo(target);
@@ -930,7 +1005,7 @@ export function IntakeForm() {
       if (Object.keys(sectionErrors).length > 0) {
         setErrors(sectionErrors);
         if (s !== section) goTo(s);
-        setFocusRequest((n) => n + 1);
+        setFocusTarget({ key: Object.keys(sectionErrors)[0] });
         return;
       }
     }
@@ -938,50 +1013,87 @@ export function IntakeForm() {
     goTo(target);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (submittingRef.current) return;
+    setSubmitError(null);
     for (let s = 0; s < SECTION_TITLES.length; s++) {
       const sectionErrors = validateSection(s, formData);
       if (Object.keys(sectionErrors).length > 0) {
         setErrors(sectionErrors);
         if (s !== section) goTo(s);
-        setFocusRequest((n) => n + 1);
+        setFocusTarget({ key: Object.keys(sectionErrors)[0] });
         return;
       }
     }
-    // TODO(next PR): POST to /api/intake once the field schema is agreed with backend.
-    setSubmitted(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    setErrors({});
+    try {
+      setReferenceNo(await submitIntake(formData));
+    } catch (error) {
+      const failure = error instanceof IntakeSubmissionError ? error : new IntakeSubmissionError("We couldn't save your project. Please try again shortly.");
+      setSubmitError(failure.message);
+      setErrors(failure.fields);
+      const firstKey = Object.keys(failure.fields)[0];
+      if (firstKey) {
+        const fields = [
+          ["sensitiveDataAcknowledged", "organizationName", "primaryContactName", "primaryContactEmail", "organizationType"],
+          ["primaryGoal", "organizationDescription", "targetAudience", "pages", "features", "featureDetails"],
+          ["hasLogo", "logoFile", "brandColors", "brandFonts", "visualStyle", "referenceWebsites"],
+          ["hasContent", "existingContent", "contentFiles", "toneAndVoice", "contentRestrictions"],
+          ["hasDomain", "domainName", "integrations", "integrationDetails"],
+          ["additionalInfo"],
+        ];
+        const target = fields.findIndex((keys) => keys.includes(firstKey.split(".")[0]));
+        if (target >= 0) goTo(target);
+        setFocusTarget({ key: firstKey });
+      }
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    }
   };
 
-  if (submitted) return <SuccessScreen />;
+  if (referenceNo) return <SuccessScreen referenceNo={referenceNo} />;
 
   const CurrentSection = SECTIONS[section];
   const isLast = section === SECTION_TITLES.length - 1;
   const errorCount = Object.keys(errors).length;
 
   return (
-    <div className="h-screen overflow-hidden bg-black flex flex-col items-center px-4 pt-10">
-      <div className="w-full max-w-[480px] flex flex-col pb-8">
-        <p className="text-gray-400 text-sm mb-1">
+    <main className="min-h-dvh bg-black px-4 py-6 sm:px-6 sm:py-10 [color-scheme:light]">
+      <div className="mx-auto w-full max-w-xl">
+        <header className="mb-8 flex items-center justify-between gap-4 border-b border-white/15 pb-5">
+          <Link href="/" className="rounded text-xl font-black tracking-tight text-white focus-visible:outline-2 focus-visible:outline-white">BUILD<span className="text-[#FF7A6E]">.</span></Link>
+          <span className="text-sm text-gray-400">Website project intake</span>
+        </header>
+        <p className="text-gray-400 text-sm mb-2" aria-live="polite" aria-atomic="true">
           Step {section + 1} of {SECTION_TITLES.length}
         </p>
-        <h1 className="text-4xl font-black text-white mb-5 tracking-tight leading-tight flex-shrink-0">
+        <h1 ref={headingRef} tabIndex={-1} className="text-3xl sm:text-4xl font-black text-white mb-2 tracking-tight leading-tight outline-none">
           {SECTION_TITLES[section]}
         </h1>
+        <p className="mb-3 text-sm leading-relaxed text-gray-300">{isLast ? "One last check, then send your project to the team." : "Tell us what you have in mind. We will help with the rest."}</p>
+        <nav aria-label="Form sections" className="mb-5 grid grid-cols-6 gap-2">
+          {SECTION_TITLES.map((title, i) => (
+            <button key={title} type="button" onClick={() => navigateTo(i)} disabled={isSubmitting}
+              aria-label={`Go to section ${i + 1}: ${title}`} aria-current={i === section ? "step" : undefined}
+              className="group flex min-h-11 items-center rounded focus-visible:outline-2 focus-visible:outline-white disabled:cursor-wait">
+              <span className={`h-1.5 w-full rounded-full transition-colors ${i <= section ? "bg-[#FF7A6E]" : "bg-white/25 group-hover:bg-white/50"}`} />
+            </button>
+          ))}
+        </nav>
 
         <form
           noValidate
           onSubmit={(e) => {
             e.preventDefault();
-            if (isLast) handleSubmit();
+            if (isLast) void handleSubmit();
             else navigateTo(section + 1);
           }}
         >
-          <div
-            ref={cardRef}
-            className="bg-[#1e1e1e] rounded-2xl px-6 py-6 overflow-y-auto"
-            style={{ maxHeight: "calc(100vh - 250px)" }}
-          >
+          <fieldset disabled={isSubmitting} aria-busy={isSubmitting} className="min-w-0 bg-[#1e1e1e] rounded-2xl px-4 py-6 sm:px-6 disabled:opacity-70">
+            <legend className="sr-only">{SECTION_TITLES[section]}</legend>
             <p className="text-xs text-gray-400 mb-5">
               Fields marked <span className="text-[#DC4436]">*</span> are required.
             </p>
@@ -991,62 +1103,50 @@ export function IntakeForm() {
               errors={errors}
               setFieldError={setFieldError}
             />
-          </div>
+            {isLast && <ReviewAnswers data={formData} onEdit={navigateTo} />}
+          </fieldset>
 
           <p role="alert" className="text-center text-sm text-[#FF7A6E] mt-4 min-h-5">
-            {errorCount > 0
+            {submitError ?? (errorCount > 0
               ? `Please fix ${errorCount === 1 ? "1 field" : `${errorCount} fields`} above to continue.`
-              : ""}
+              : "")}
           </p>
 
-          <div className="flex items-center justify-center gap-3 mt-2">
+          <div className="mt-3 flex items-center justify-between gap-4 pb-4">
             <button
               type="button"
               onClick={() => section > 0 && navigateTo(section - 1)}
-              disabled={section === 0}
+              disabled={section === 0 || isSubmitting}
               aria-label="Previous section"
-              className="w-11 h-11 rounded-full bg-[#DC4436] flex items-center justify-center text-white transition-opacity disabled:opacity-30 hover:opacity-90 flex-shrink-0"
+              className="min-h-12 rounded-full px-4 flex items-center gap-1 text-sm font-semibold text-white transition-colors disabled:opacity-30 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white"
             >
               <ChevronLeft size={22} />
+              Back
             </button>
-
-            <div className="flex items-center gap-2">
-              {SECTION_TITLES.map((title, i) => (
-                <button
-                  key={title}
-                  type="button"
-                  onClick={() => navigateTo(i)}
-                  aria-label={`Go to section ${i + 1}: ${title}`}
-                  aria-current={i === section ? "step" : undefined}
-                  className={`rounded-full transition-all ${
-                    i === section
-                      ? "w-3 h-3 bg-[#DC4436]"
-                      : "w-2.5 h-2.5 bg-transparent border border-white/60 hover:border-white"
-                  }`}
-                />
-              ))}
-            </div>
 
             {isLast ? (
               <button
                 type="submit"
-                className="h-11 px-6 rounded-full bg-[#DC4436] flex items-center gap-2 text-white text-sm font-semibold transition-opacity hover:opacity-90 flex-shrink-0"
+                disabled={isSubmitting}
+                className="min-h-12 px-6 rounded-full bg-[#DC4436] flex items-center gap-2 text-white text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60 disabled:cursor-wait focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
               >
-                Submit
-                <Check size={16} aria-hidden="true" />
+                {isSubmitting ? "Sending…" : "Submit project"}
+                {isSubmitting ? <LoaderCircle size={18} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Check size={18} aria-hidden="true" />}
               </button>
             ) : (
               <button
                 type="submit"
                 aria-label="Next section"
-                className="w-11 h-11 rounded-full bg-[#DC4436] flex items-center justify-center text-white transition-opacity hover:opacity-90 flex-shrink-0"
+                className="min-h-12 px-6 rounded-full bg-[#DC4436] flex items-center justify-center gap-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
               >
+                Continue
                 <ChevronRight size={22} />
               </button>
             )}
           </div>
+          <p className="pb-6 text-center text-xs leading-relaxed text-gray-400">Your answers are sent only when you submit. Keep this tab open while completing your project.</p>
         </form>
       </div>
-    </div>
+    </main>
   );
 }

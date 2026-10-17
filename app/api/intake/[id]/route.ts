@@ -1,27 +1,51 @@
 import { NextRequest, NextResponse } from "next/server"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import { getDb } from "@/src/db"
 import { organizations } from "@/src/db/schema/organizations"
 import { intakeJobs } from "@/src/db/schema/intake-jobs"
 import { intakeSubmissions } from "@/src/db/schema/intake-submissions"
+import { auth } from "@/src/auth"
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function submissionLinks(notes: string | null) {
+  if (!notes) return null
+  try {
+    const value: unknown = JSON.parse(notes)
+    if (!value || typeof value !== "object" || !("version" in value) || value.version !== 1 ||
+      !("organizationId" in value) || typeof value.organizationId !== "string" || !UUID_RE.test(value.organizationId) ||
+      !("jobId" in value) || typeof value.jobId !== "string" || !UUID_RE.test(value.jobId)) return null
+    return { organizationId: value.organizationId, jobId: value.jobId }
+  } catch {
+    return null
+  }
+}
+
+async function authorizeReviewer() {
+  const session = await auth()
+  if (!session?.user) return NextResponse.json({ success: false, error: "Authentication required" }, { status: 401 })
+  if (!["admin", "reviewer"].includes(session.user.role)) return NextResponse.json({ success: false, error: "Reviewer access required" }, { status: 403 })
+  return null
+}
 
 interface RouteContext {
   params: Promise<{ id: string }>
 }
 
 export async function GET(_req: NextRequest, ctx: RouteContext) {
+  const unauthorized = await authorizeReviewer()
+  if (unauthorized) return unauthorized
   const { id } = await ctx.params
 
-  if (!id || typeof id !== "string") {
+  if (!UUID_RE.test(id)) {
     return NextResponse.json(
-      { success: false, error: "Missing submission ID" },
+      { success: false, error: "Invalid submission ID" },
       { status: 400 }
     )
   }
 
-  const db = getDb()
-
   try {
+    const db = getDb()
     const [submission] = await db
       .select()
       .from(intakeSubmissions)
@@ -35,11 +59,14 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
       )
     }
 
+    const links = submissionLinks(submission.notes)
     const [organization] = submission.clientEmail
       ? await db
           .select()
           .from(organizations)
-          .where(eq(organizations.contactEmail, submission.clientEmail))
+          .where(links
+            ? and(eq(organizations.id, links.organizationId), eq(organizations.contactEmail, submission.clientEmail))
+            : eq(organizations.contactEmail, submission.clientEmail))
           .limit(1)
       : []
 
@@ -47,7 +74,9 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
       ? await db
           .select()
           .from(intakeJobs)
-          .where(eq(intakeJobs.orgId, organization.id))
+          .where(links
+            ? and(eq(intakeJobs.orgId, organization.id), eq(intakeJobs.id, links.jobId))
+            : eq(intakeJobs.orgId, organization.id))
       : []
 
     return NextResponse.json({
@@ -68,7 +97,10 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
 }
 
 export async function PATCH(req: NextRequest, ctx: RouteContext) {
+  const unauthorized = await authorizeReviewer()
+  if (unauthorized) return unauthorized
   const { id } = await ctx.params
+  if (!UUID_RE.test(id)) return NextResponse.json({ success: false, error: "Invalid submission ID" }, { status: 400 })
 
   let body: unknown
   try {
@@ -94,6 +126,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
   if (
     !body ||
     typeof body !== "object" ||
+    Array.isArray(body) ||
     !("status" in (body as object)) ||
     typeof (body as Record<string, unknown>).status !== "string" ||
     !VALID_STATUSES.has((body as Record<string, unknown>).status as string)
@@ -108,9 +141,8 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
   }
 
   const nextStatus = (body as { status: string }).status
-  const db = getDb()
-
   try {
+    const db = getDb()
     const [updated] = await db
       .update(intakeSubmissions)
       .set({

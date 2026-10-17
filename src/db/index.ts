@@ -26,5 +26,3 @@ function getPool(): Pool {
 export function getDb() {
   return drizzle(getPool(), { schema })
 }
-
-export const db = getDb()

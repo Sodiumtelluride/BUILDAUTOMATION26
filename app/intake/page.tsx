@@ -1,12 +1,8 @@
-import { Inter } from "next/font/google";
+import type { Metadata } from "next";
 import { IntakeForm } from "@/src/components/intake/IntakeForm";
 
-const inter = Inter({ subsets: ["latin"] });
+export const metadata: Metadata = { title: "Start a website project" };
 
 export default function IntakePage() {
-  return (
-    <div className={inter.className}>
-      <IntakeForm />
-    </div>
-  );
+  return <IntakeForm />;
 }
