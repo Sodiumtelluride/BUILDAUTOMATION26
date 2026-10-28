@@ -5,7 +5,7 @@ Typical use inside the DESIGN node::
 
     from pipeline.design_spec import SpecAccepted, generate_validated_spec
 
-    result = await generate_validated_spec(generate=call_model, previous=previous_spec)
+    result = await generate_validated_spec(generate=call_model, previous=previous_spec, job_id=state.job_id)
     if isinstance(result, SpecAccepted):
         ...  # safe to write result.spec to state
     else:

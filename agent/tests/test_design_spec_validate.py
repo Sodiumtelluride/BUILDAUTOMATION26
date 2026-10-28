@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from typing import Any, Callable, Dict, List, Sequence
 
 from pipeline.design_spec import DesignSpec, Invalid, Valid, ValidationIssue, validate_design_spec
@@ -122,3 +123,55 @@ def test_section_ids_and_slugs_unique(make_spec: MakeSpec) -> None:
     s["pages"][1]["sections"][0]["id"] = "hero-1"
     s["pages"][1]["slug"] = "/"
     expect_issues(s, "duplicate_section_id", "duplicate_slug")
+
+
+# --- The spec belongs to the job being run ----------------------------------
+
+
+def test_rejects_a_spec_for_a_different_job(make_spec: MakeSpec) -> None:
+    s = make_spec()
+    result = validate_design_spec(s, expected_job_id="00000000-0000-4000-8000-000000000000")
+    assert isinstance(result, Invalid)
+    assert [i.code for i in result.issues] == ["job_id_mismatch"]
+
+
+def test_accepts_the_matching_job_id_as_string_or_uuid(make_spec: MakeSpec) -> None:
+    s = make_spec()
+    assert isinstance(validate_design_spec(s, expected_job_id=s["job_id"]), Valid)
+    assert isinstance(validate_design_spec(s, expected_job_id=uuid.UUID(s["job_id"])), Valid)
+
+
+# --- Fields downstream stages read are IDs, not prose -----------------------
+
+
+def test_rejects_prose_in_section_type_and_components(make_spec: MakeSpec) -> None:
+    s = make_spec()
+    s["pages"][0]["sections"][0]["type"] = "make it pop somehow"
+    s["pages"][0]["sections"][0]["components"] = ["a nice button please"]
+    paths = [i.path for i in expect_issues(s, "schema")]
+    assert "pages[0].sections[0].type" in paths
+    assert any(p.startswith("pages[0].sections[0].components") for p in paths)
+
+
+def test_figma_url_must_be_a_figma_link(make_spec: MakeSpec) -> None:
+    s = make_spec()
+    s["flags"] = [f for f in s["flags"] if f["code"] != "no_figma"]
+    s["figma_url"] = "see figma lol"
+    assert expect_issues(s, "schema")[0].path == "figma_url"
+    s["figma_url"] = "https://www.figma.com/design/AbC123/job-6f1c"
+    assert isinstance(validate_design_spec(s), Valid)
+
+
+# --- figma_url and the no_figma flag agree (D16) ----------------------------
+
+
+def test_figma_url_and_no_figma_flag_cannot_both_be_set(make_spec: MakeSpec) -> None:
+    s = make_spec()  # fixture already has a no_figma flag
+    s["figma_url"] = "https://www.figma.com/design/AbC123/job-6f1c"
+    expect_issues(s, "figma_state_conflict")
+
+
+def test_spec_needs_a_figma_url_or_a_no_figma_flag(make_spec: MakeSpec) -> None:
+    s = make_spec()
+    s["flags"] = [f for f in s["flags"] if f["code"] != "no_figma"]
+    expect_issues(s, "figma_state_conflict")

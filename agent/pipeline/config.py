@@ -51,6 +51,8 @@ _DEFAULTS: Dict[str, Dict[str, Any]] = {
         "model_id": "claude-haiku-4-5-20251001",
         "token_budget": 12_000,
         "cost_budget_usd": 0.08,
+        # D20: "retry this node alone (maximum two attempts)" = 1 retry.
+        "max_retries": 1,
     },
     "CODE_GENERATION": {
         "model_id": "claude-sonnet-4-6",

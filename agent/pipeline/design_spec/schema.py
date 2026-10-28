@@ -10,6 +10,7 @@ Contract rules this module enforces:
   - No free text a downstream stage must interpret: anything a later stage
     reads is a fixed word (Literal), a pattern-checked ID, or a number.
     The only free string is ``Assumption.text``, which only reviewers read.
+    Font names are plain strings for now; the approved-font list is D6.
   - Every flag carries a code from a closed set. Instead of a prose
     ``detail``, each code has typed fields (e.g. which section it is about).
 """
@@ -113,6 +114,12 @@ SectionId = Annotated[str, StringConstraints(pattern=SECTION_ID_PATTERN)]
 ContentBlockId = Annotated[str, StringConstraints(pattern=CONTENT_BLOCK_ID_PATTERN)]
 Slug = Annotated[str, StringConstraints(pattern=r"^/([a-z0-9]+(-[a-z0-9]+)*(/[a-z0-9]+(-[a-z0-9]+)*)*)?$")]
 Rem = Annotated[str, StringConstraints(pattern=r"^(0|[0-9]+(\.[0-9]+)?rem)$")]
+# Catalog section type ID, e.g. "hero-centered". Membership in the approved
+# catalog is D2's check; this only guarantees an ID, not prose.
+SectionType = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")]
+# shadcn/ui component name, e.g. "Button", "DropdownMenu".
+ComponentName = Annotated[str, StringConstraints(pattern=r"^[A-Z][A-Za-z0-9]*$")]
+FigmaUrl = Annotated[str, StringConstraints(pattern=r"^https://(www\.)?figma\.com/\S+$")]
 NonEmptyStr = Annotated[str, StringConstraints(min_length=1)]
 
 T = TypeVar("T")
@@ -175,8 +182,8 @@ class ContentBlock(_Strict):
 
 class Section(_Strict):
     id: SectionId
-    type: NonEmptyStr
-    components: UniqueList[NonEmptyStr]
+    type: SectionType
+    components: UniqueList[ComponentName]
     content_blocks: List[ContentBlock] = Field(min_length=1)
     source_fields: NonEmptyUniqueList[IntakeField]
 
@@ -245,4 +252,4 @@ class DesignSpec(_Strict):
     integrations: UniqueList[Integration]
     flags: List[Flag]
     assumptions: List[Assumption]
-    figma_url: Optional[NonEmptyStr] = None
+    figma_url: Optional[FigmaUrl] = None

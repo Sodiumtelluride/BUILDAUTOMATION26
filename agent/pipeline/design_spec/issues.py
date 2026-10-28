@@ -17,6 +17,10 @@ IssueCode = Literal[
     "duplicate_section_id",
     "duplicate_content_block_id",
     "flag_reference_missing",
+    # The spec must belong to the job being run
+    "job_id_mismatch",
+    # figma_url and the no_figma flag must agree (D16, PRD §4 Figma link)
+    "figma_state_conflict",
     # Stable IDs across revisions
     "job_id_changed",
     "section_identity_changed",
