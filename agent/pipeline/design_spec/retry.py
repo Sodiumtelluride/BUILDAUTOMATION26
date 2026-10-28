@@ -18,6 +18,7 @@ calls this and returns ``spec`` to state only on a ``SpecAccepted`` result.
 from __future__ import annotations
 
 import json
+import uuid
 from dataclasses import dataclass, field
 from typing import Awaitable, Callable, Optional, Sequence, Union
 
@@ -62,12 +63,16 @@ async def generate_validated_spec(
     previous: Optional[DesignSpec] = None,
     max_retries: Optional[int] = None,
     on_attempt: Optional[OnAttempt] = None,
+    *,
+    job_id: Union[uuid.UUID, str],
 ) -> RunResult:
     """
     Call ``generate`` until it returns a valid spec or the retry limit is hit.
 
     Args:
         generate: Produces the raw model output: a JSON string or a parsed dict.
+        job_id: The job being run. A spec with any other job_id is rejected,
+            so output is never written to the wrong job's state.
         previous: The last valid spec for this job, if this is a rerun.
         max_retries: Retries after the first attempt. Defaults to the DESIGN
             node's ``max_retries`` in ``pipeline/config.py`` (overridable with
@@ -83,7 +88,7 @@ async def generate_validated_spec(
 
     for attempt in range(1, total_attempts + 1):
         raw = await generate(GenerateAttempt(attempt, previous_issues))
-        result = _parse_and_validate(raw, previous)
+        result = _parse_and_validate(raw, previous, job_id)
 
         issues: Sequence[ValidationIssue] = result.issues if isinstance(result, Invalid) else ()
         if on_attempt is not None:
@@ -96,10 +101,12 @@ async def generate_validated_spec(
     return NeedsHumanReview(issues=previous_issues, attempts=total_attempts)
 
 
-def _parse_and_validate(raw: object, previous: Optional[DesignSpec]) -> ValidateResult:
+def _parse_and_validate(
+    raw: object, previous: Optional[DesignSpec], job_id: Union[uuid.UUID, str]
+) -> ValidateResult:
     if isinstance(raw, (str, bytes)):
         try:
             raw = json.loads(raw)
         except json.JSONDecodeError as exc:
             return Invalid([ValidationIssue("invalid_json", "", f"output is not valid JSON: {exc}")])
-    return validate_design_spec(raw, previous)
+    return validate_design_spec(raw, previous, expected_job_id=job_id)
