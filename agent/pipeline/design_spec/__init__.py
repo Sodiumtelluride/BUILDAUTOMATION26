@@ -12,13 +12,24 @@ Typical use inside the DESIGN node::
         ...  # result.issues -> review flag; an invalid spec is never written
 """
 
+from .decisions import (
+    current_decisions,
+    decisions_for,
+    from_config,
+    from_default,
+    from_intake,
+    from_rule,
+    record_decision,
+    spec_targets,
+)
 from .issues import IssueCode, ValidationIssue, format_issues_for_repair
 from .retry import GenerateAttempt, NeedsHumanReview, RunResult, SpecAccepted, generate_validated_spec
 from .revisions import RevisionDiff, compare_revisions
-from .schema import DesignSpec
+from .schema import Decision, DesignSpec
 from .validate import Invalid, Valid, ValidateResult, validate_design_spec
 
 __all__ = [
+    "Decision",
     "DesignSpec",
     "GenerateAttempt",
     "Invalid",
@@ -31,6 +42,14 @@ __all__ = [
     "ValidateResult",
     "ValidationIssue",
     "compare_revisions",
+    "current_decisions",
+    "decisions_for",
+    "from_config",
+    "from_default",
+    "from_intake",
+    "from_rule",
+    "record_decision",
+    "spec_targets",
     "format_issues_for_repair",
     "generate_validated_spec",
     "validate_design_spec",
