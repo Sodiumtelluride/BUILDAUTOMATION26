@@ -8,7 +8,10 @@ Checks, in order:
   3. IDs: section, content block and page IDs are unique (so downstream
      stages can address them), and flags only point at IDs that exist.
   4. Consistency: figma_url is set exactly when there is no no_figma flag.
-  5. Stable IDs: on a rerun, IDs match the previous spec (revisions.py).
+  5. Decisions (D5): the log is well formed and every part of the spec has a
+     current decision (decisions.py).
+  6. Stable IDs: on a rerun, IDs match the previous spec and earlier
+     decisions are kept unchanged (revisions.py).
 
 Pure function: no I/O, no state writes. The caller writes ``spec`` to state
 only when the result is ``Valid``.
@@ -22,6 +25,7 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple, Union
 
 from pydantic import ValidationError
 
+from .decisions import addressable_targets, spec_targets, superseded_ids
 from .issues import ValidationIssue
 from .revisions import RevisionDiff, compare_revisions
 from .schema import DesignSpec, HeroImageFallbackFlag, NoFigmaFlag
@@ -75,6 +79,7 @@ def validate_design_spec(
 
     issues.extend(_check_ids(spec))
     issues.extend(_check_figma(spec))
+    issues.extend(_check_decisions(spec, previous))
 
     diff: Optional[RevisionDiff] = None
     if previous is not None:
@@ -145,6 +150,97 @@ def _check_figma(spec: DesignSpec) -> List[ValidationIssue]:
             )
         ]
     return []
+
+
+def _check_decisions(spec: DesignSpec, previous: Optional[DesignSpec] = None) -> List[ValidationIssue]:
+    """D5: every design decision is recorded with its source.
+
+    - Decision IDs are unique; derived_from/supersedes point at real decisions;
+      nothing is superseded twice.
+    - Decisions made in this run only point at things in the spec. Decisions
+      kept from ``previous`` may point at things a rerun removed; that is
+      history, and they simply stop being current.
+    - Every part of the spec has at least one current decision.
+    - Every contrast adjustment (D9) has a contrast_fix decision.
+    """
+    out: List[ValidationIssue] = []
+    log = spec.decisions
+    seen: Dict[str, int] = {}
+    for i, d in enumerate(log):
+        if d.id in seen:
+            out.append(
+                ValidationIssue(
+                    "duplicate_decision_id", f"decisions[{i}].id", f'decision id "{d.id}" is already used at decisions[{seen[d.id]}]'
+                )
+            )
+        seen.setdefault(d.id, i)
+
+    supersede_count: Dict[str, int] = {}
+    for i, d in enumerate(log):
+        for ref in d.derived_from:
+            if ref not in seen:
+                out.append(
+                    ValidationIssue(
+                        "decision_reference_missing", f"decisions[{i}].derived_from", f'decision "{ref}" does not exist'
+                    )
+                )
+        if d.supersedes is not None:
+            if d.supersedes not in seen or d.supersedes == d.id:
+                out.append(
+                    ValidationIssue(
+                        "decision_reference_missing",
+                        f"decisions[{i}].supersedes",
+                        f'decision "{d.supersedes}" does not exist or is this decision',
+                    )
+                )
+            supersede_count[d.supersedes] = supersede_count.get(d.supersedes, 0) + 1
+    for ref, n in supersede_count.items():
+        if n > 1:
+            out.append(
+                ValidationIssue(
+                    "decision_superseded_twice", "decisions", f'decision "{ref}" is superseded by {n} decisions; only one may replace it'
+                )
+            )
+
+    exists = addressable_targets(spec)
+    earlier = {d.id for d in previous.decisions} if previous is not None else set()
+    for i, d in enumerate(log):
+        if d.id in earlier:
+            continue
+        for t in d.targets:
+            if t not in exists:
+                out.append(
+                    ValidationIssue(
+                        "decision_target_missing", f"decisions[{i}].targets", f'"{t}" is not part of this spec'
+                    )
+                )
+
+    gone = superseded_ids(log)
+    covered: Set[str] = set()
+    fixed_roles: Set[str] = set()
+    for d in log:
+        if d.id in gone or not all(t in exists for t in d.targets):
+            continue
+        covered.update(d.targets)
+        if d.kind == "contrast_fix":
+            fixed_roles.update(t.removeprefix("tokens.colors.") for t in d.targets)
+    for t in spec_targets(spec):
+        if t not in covered:
+            out.append(
+                ValidationIssue(
+                    "decision_missing", "decisions", f'"{t}" has no decision; record which input or rule set it'
+                )
+            )
+    for a, adj in enumerate(spec.tokens.contrast_adjustments):
+        if adj.role not in fixed_roles:
+            out.append(
+                ValidationIssue(
+                    "contrast_fix_unrecorded",
+                    f"tokens.contrast_adjustments[{a}]",
+                    f'the change to "{adj.role}" needs a contrast_fix decision targeting "tokens.colors.{adj.role}"',
+                )
+            )
+    return out
 
 
 def _format_loc(loc: Tuple[Union[int, str], ...]) -> str:

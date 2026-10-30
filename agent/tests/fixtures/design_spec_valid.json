@@ -43,10 +43,6 @@
               "kind": "cta_label",
               "max_chars": 24
             }
-          ],
-          "source_fields": [
-            "primary_goal",
-            "visual_style"
           ]
         },
         {
@@ -61,9 +57,6 @@
               "kind": "headline",
               "max_chars": 60
             }
-          ],
-          "source_fields": [
-            "organization_description"
           ]
         }
       ]
@@ -85,10 +78,6 @@
               "kind": "headline",
               "max_chars": 60
             }
-          ],
-          "source_fields": [
-            "features",
-            "pages"
           ]
         }
       ]
@@ -115,12 +104,266 @@
       "reason": "figma_disabled"
     }
   ],
-  "assumptions": [
+  "decisions": [
     {
-      "source_fields": [
-        "logo"
+      "id": "dec-1",
+      "kind": "token",
+      "targets": [
+        "tokens.colors.primary",
+        "tokens.colors.secondary"
       ],
-      "text": "Hero uses a gradient because no photo was uploaded."
+      "sources": [
+        {
+          "type": "intake",
+          "ref": "brand_colors"
+        }
+      ],
+      "method": "code",
+      "revision": 1
+    },
+    {
+      "id": "dec-2",
+      "kind": "token",
+      "targets": [
+        "tokens.colors.background",
+        "tokens.colors.foreground",
+        "tokens.colors.muted",
+        "tokens.colors.muted_foreground",
+        "tokens.colors.accent",
+        "tokens.colors.accent_foreground",
+        "tokens.colors.border"
+      ],
+      "sources": [
+        {
+          "type": "default",
+          "ref": "build_tokens"
+        }
+      ],
+      "method": "code",
+      "revision": 1
+    },
+    {
+      "id": "dec-3",
+      "kind": "token",
+      "targets": [
+        "tokens.colors.primary_foreground",
+        "tokens.colors.secondary_foreground"
+      ],
+      "sources": [
+        {
+          "type": "rule",
+          "ref": "wcag_aa"
+        }
+      ],
+      "method": "code",
+      "revision": 1,
+      "derived_from": [
+        "dec-1"
+      ]
+    },
+    {
+      "id": "dec-4",
+      "kind": "token",
+      "targets": [
+        "tokens.fonts.heading",
+        "tokens.fonts.body"
+      ],
+      "sources": [
+        {
+          "type": "intake",
+          "ref": "brand_fonts"
+        }
+      ],
+      "method": "code",
+      "revision": 1
+    },
+    {
+      "id": "dec-5",
+      "kind": "token",
+      "targets": [
+        "tokens.radius"
+      ],
+      "sources": [
+        {
+          "type": "intake",
+          "ref": "visual_style"
+        }
+      ],
+      "method": "llm",
+      "revision": 1
+    },
+    {
+      "id": "dec-6",
+      "kind": "page",
+      "targets": [
+        "page:/",
+        "page:/join"
+      ],
+      "sources": [
+        {
+          "type": "intake",
+          "ref": "pages"
+        }
+      ],
+      "method": "code",
+      "revision": 1
+    },
+    {
+      "id": "dec-7",
+      "kind": "section",
+      "targets": [
+        "section:hero-1"
+      ],
+      "sources": [
+        {
+          "type": "intake",
+          "ref": "primary_goal"
+        },
+        {
+          "type": "intake",
+          "ref": "visual_style"
+        }
+      ],
+      "method": "llm",
+      "revision": 1
+    },
+    {
+      "id": "dec-8",
+      "kind": "section",
+      "targets": [
+        "section:programs-grid-1"
+      ],
+      "sources": [
+        {
+          "type": "intake",
+          "ref": "organization_description"
+        }
+      ],
+      "method": "llm",
+      "revision": 1
+    },
+    {
+      "id": "dec-9",
+      "kind": "section",
+      "targets": [
+        "section:contact-form-1"
+      ],
+      "sources": [
+        {
+          "type": "intake",
+          "ref": "features"
+        },
+        {
+          "type": "intake",
+          "ref": "pages"
+        }
+      ],
+      "method": "llm",
+      "revision": 1
+    },
+    {
+      "id": "dec-10",
+      "kind": "feature",
+      "targets": [
+        "feature:member_application_form"
+      ],
+      "sources": [
+        {
+          "type": "intake",
+          "ref": "features"
+        }
+      ],
+      "method": "code",
+      "revision": 1
+    },
+    {
+      "id": "dec-11",
+      "kind": "data_requirement",
+      "targets": [
+        "data_requirement:form_submissions"
+      ],
+      "sources": [
+        {
+          "type": "rule",
+          "ref": "feature_data_recipe"
+        }
+      ],
+      "method": "code",
+      "revision": 1,
+      "derived_from": [
+        "dec-10"
+      ]
+    },
+    {
+      "id": "dec-12",
+      "kind": "integration",
+      "targets": [
+        "integration:google_analytics"
+      ],
+      "sources": [
+        {
+          "type": "intake",
+          "ref": "integrations"
+        }
+      ],
+      "method": "code",
+      "revision": 1
+    },
+    {
+      "id": "dec-13",
+      "kind": "flag",
+      "targets": [
+        "flag:hero_image_fallback:hero-1"
+      ],
+      "sources": [
+        {
+          "type": "intake",
+          "ref": "brand_assets"
+        },
+        {
+          "type": "default",
+          "ref": "hero_gradient"
+        }
+      ],
+      "method": "code",
+      "revision": 1,
+      "derived_from": [
+        "dec-7"
+      ]
+    },
+    {
+      "id": "dec-14",
+      "kind": "flag",
+      "targets": [
+        "flag:no_figma"
+      ],
+      "sources": [
+        {
+          "type": "config",
+          "ref": "figma_generation"
+        }
+      ],
+      "method": "code",
+      "revision": 1
+    },
+    {
+      "id": "dec-15",
+      "kind": "assumption",
+      "targets": [
+        "section:hero-1"
+      ],
+      "sources": [
+        {
+          "type": "intake",
+          "ref": "brand_assets"
+        }
+      ],
+      "method": "code",
+      "revision": 1,
+      "derived_from": [
+        "dec-13"
+      ],
+      "summary": "Hero uses a gradient because no photo was uploaded."
     }
   ]
 }
