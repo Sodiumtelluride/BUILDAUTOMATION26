@@ -48,6 +48,17 @@ def test_accepts_a_contrast_adjustment_as_sent_in_json(make_spec: MakeSpec) -> N
             "ratio_after": 7.2,
         }
     ]
+    s["decisions"].append(
+        {
+            "id": "dec-16",
+            "kind": "contrast_fix",
+            "targets": ["tokens.colors.muted_foreground"],
+            "sources": [{"type": "rule", "ref": "wcag_aa"}],
+            "method": "code",
+            "revision": 1,
+            "derived_from": ["dec-2"],
+        }
+    )
     assert isinstance(validate_design_spec(s), Valid)
 
 
@@ -84,7 +95,7 @@ def test_does_not_coerce_strings_to_numbers(make_spec: MakeSpec) -> None:
 def test_rejects_words_outside_the_fixed_vocabularies(make_spec: MakeSpec) -> None:
     s = make_spec()
     s["features"] = ["a really nice donate page"]
-    s["pages"][0]["sections"][0]["source_fields"] = ["vibes"]
+    s["decisions"][0]["sources"] = [{"type": "intake", "ref": "vibes"}]
     expect_issues(s, "schema")
 
 
@@ -156,6 +167,7 @@ def test_rejects_prose_in_section_type_and_components(make_spec: MakeSpec) -> No
 def test_figma_url_must_be_a_figma_link(make_spec: MakeSpec) -> None:
     s = make_spec()
     s["flags"] = [f for f in s["flags"] if f["code"] != "no_figma"]
+    s["decisions"] = [d for d in s["decisions"] if d["targets"] != ["flag:no_figma"]]
     s["figma_url"] = "see figma lol"
     assert expect_issues(s, "schema")[0].path == "figma_url"
     s["figma_url"] = "https://www.figma.com/design/AbC123/job-6f1c"

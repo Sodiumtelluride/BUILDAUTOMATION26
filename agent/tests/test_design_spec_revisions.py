@@ -30,7 +30,16 @@ def test_adding_a_section_is_allowed_and_reported(make_spec: MakeSpec) -> None:
             "type": "stats-bar",
             "components": [],
             "content_blocks": [{"id": "home.stats.label", "kind": "label", "max_chars": 30}],
-            "source_fields": ["organization_description"],
+        }
+    )
+    nxt["decisions"].append(
+        {
+            "id": "dec-16",
+            "kind": "section",
+            "targets": ["section:stats-bar-1"],
+            "sources": [{"type": "reviewer_note", "ref": "rej-1"}],
+            "method": "llm",
+            "revision": 2,
         }
     )
     result = validate_design_spec(nxt, previous=prev)

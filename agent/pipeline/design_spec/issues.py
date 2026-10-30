@@ -21,12 +21,21 @@ IssueCode = Literal[
     "job_id_mismatch",
     # figma_url and the no_figma flag must agree (D16, PRD §4 Figma link)
     "figma_state_conflict",
+    # D5 decision log: every part of the spec has a current decision
+    "duplicate_decision_id",
+    "decision_reference_missing",
+    "decision_superseded_twice",
+    "decision_target_missing",
+    "decision_missing",
+    "contrast_fix_unrecorded",
     # Stable IDs across revisions
     "job_id_changed",
     "section_identity_changed",
     "content_block_identity_changed",
     "section_id_regenerated",
     "content_block_id_regenerated",
+    # D5 + Pipeline DoD: the decision log is append-only across revisions
+    "decision_history_changed",
 ]
 
 

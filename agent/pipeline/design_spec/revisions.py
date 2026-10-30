@@ -14,6 +14,10 @@ Rules:
     same type appears on the same page, the old ID must be reused. Same for a
     content block of the same kind inside a surviving section.
 
+  - The decision log is append-only (D5, Pipeline DoD): every decision from
+    the previous spec is still there, unchanged. A rerun records changes as
+    new decisions that supersede old ones.
+
 Removals and genuine additions are allowed and reported in the diff, so the
 pipeline knows which downstream work to invalidate.
 """
@@ -137,6 +141,26 @@ def compare_revisions(prev: DesignSpec, nxt: DesignSpec) -> Tuple[List[Validatio
                     "content_block_id_regenerated",
                     f"{now_b.path}.id",
                     f'"{added}" replaces "{match}" (same {now_b.kind} in "{now_b.section}"); keep the id "{match}"',
+                )
+            )
+
+    new_log = {d.id: d for d in nxt.decisions}
+    for old in prev.decisions:
+        kept = new_log.get(old.id)
+        if kept is None:
+            out.append(
+                ValidationIssue(
+                    "decision_history_changed",
+                    "decisions",
+                    f'decision "{old.id}" was removed; keep it and supersede it with a new decision instead',
+                )
+            )
+        elif kept != old:
+            out.append(
+                ValidationIssue(
+                    "decision_history_changed",
+                    "decisions",
+                    f'decision "{old.id}" was edited; keep it unchanged and supersede it with a new decision instead',
                 )
             )
 
