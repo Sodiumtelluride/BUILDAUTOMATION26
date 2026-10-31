@@ -7,10 +7,16 @@ Checks, in order:
   2. Job: the spec's job_id is the job being run, when the caller passes it.
   3. IDs: section, content block and page IDs are unique (so downstream
      stages can address them), and flags only point at IDs that exist.
-  4. Consistency: figma_url is set exactly when there is no no_figma flag.
-  5. Decisions (D5): the log is well formed and every part of the spec has a
+  4. Catalog (D2): every section type is in the approved BUILD section
+     catalog, components are allowed for that type, and content blocks match
+     the type's slots: kind fixed by the slot, max_chars at most the slot
+     limit, required slots present (catalog.py).
+  5. Requested pages: when the caller passes the slugs intake asked for,
+     every one of them must appear in the page map.
+  6. Consistency: figma_url is set exactly when there is no no_figma flag.
+  7. Decisions (D5): the log is well formed and every part of the spec has a
      current decision (decisions.py).
-  6. Stable IDs: on a rerun, IDs match the previous spec and earlier
+  8. Stable IDs: on a rerun, IDs match the previous spec and earlier
      decisions are kept unchanged (revisions.py).
 
 Pure function: no I/O, no state writes. The caller writes ``spec`` to state
@@ -25,6 +31,7 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple, Union
 
 from pydantic import ValidationError
 
+from .catalog import CATALOG_VERSION, get_section_def
 from .decisions import addressable_targets, spec_targets, superseded_ids
 from .issues import ValidationIssue
 from .revisions import RevisionDiff, compare_revisions
@@ -52,12 +59,16 @@ def validate_design_spec(
     previous: Optional[DesignSpec] = None,
     *,
     expected_job_id: Optional[Union[uuid.UUID, str]] = None,
+    required_slugs: Optional[Sequence[str]] = None,
 ) -> ValidateResult:
     """
     Validate parsed model output (a dict). Pass ``previous`` on a rerun.
 
     Pass ``expected_job_id`` (the job being run) whenever the result may be
     written to state, so a spec for the wrong job is never accepted.
+
+    Pass ``required_slugs`` (the slugs of the pages intake requested) so a
+    spec that drops a requested page is rejected.
     """
     try:
         spec = DesignSpec.model_validate(data)
@@ -78,6 +89,8 @@ def validate_design_spec(
             )
 
     issues.extend(_check_ids(spec))
+    issues.extend(_check_catalog(spec))
+    issues.extend(_check_requested_pages(spec, required_slugs))
     issues.extend(_check_figma(spec))
     issues.extend(_check_decisions(spec, previous))
 
@@ -135,6 +148,100 @@ def _check_ids(spec: DesignSpec) -> List[ValidationIssue]:
                 )
             )
     return out
+
+
+def _check_catalog(spec: DesignSpec) -> List[ValidationIssue]:
+    """D2: sections, their components and their content blocks must come from
+    the approved BUILD section catalog (catalog.py, version CATALOG_VERSION)."""
+    out: List[ValidationIssue] = []
+    for p, page in enumerate(spec.pages):
+        for s, section in enumerate(page.sections):
+            s_path = f"pages[{p}].sections[{s}]"
+            sdef = get_section_def(section.type)
+            if sdef is None:
+                out.append(
+                    ValidationIssue(
+                        "unknown_section_type",
+                        f"{s_path}.type",
+                        f'"{section.type}" is not in the approved BUILD section catalog (version {CATALOG_VERSION})',
+                    )
+                )
+                continue
+
+            unknown = [c for c in section.components if c not in sdef.components]
+            if unknown:
+                out.append(
+                    ValidationIssue(
+                        "section_components_not_in_catalog",
+                        f"{s_path}.components",
+                        f'{unknown} are not allowed for "{section.type}"; allowed: {list(sdef.components)}',
+                    )
+                )
+
+            filled: Set[str] = set()
+            for b, block in enumerate(section.content_blocks):
+                b_path = f"{s_path}.content_blocks[{b}]"
+                slot_name = block.id.rsplit(".", 1)[-1]
+                slot = sdef.slot(slot_name)
+                if slot is None:
+                    out.append(
+                        ValidationIssue(
+                            "content_block_catalog_mismatch",
+                            f"{b_path}.id",
+                            f'"{section.type}" has no content slot "{slot_name}"; '
+                            f"slots: {[sl.name for sl in sdef.slots]}",
+                        )
+                    )
+                    continue
+                if slot_name in filled:
+                    out.append(
+                        ValidationIssue(
+                            "content_block_catalog_mismatch",
+                            f"{b_path}.id",
+                            f'slot "{slot_name}" is already filled on section "{section.id}"',
+                        )
+                    )
+                    continue
+                filled.add(slot_name)
+                if block.kind != slot.kind:
+                    out.append(
+                        ValidationIssue(
+                            "content_block_catalog_mismatch",
+                            f"{b_path}.kind",
+                            f'slot "{slot_name}" of "{section.type}" is a {slot.kind}, not a {block.kind}',
+                        )
+                    )
+                if block.max_chars > slot.max_chars:
+                    out.append(
+                        ValidationIssue(
+                            "content_block_catalog_mismatch",
+                            f"{b_path}.max_chars",
+                            f'slot "{slot_name}" of "{section.type}" allows at most {slot.max_chars} characters, '
+                            f"got {block.max_chars}",
+                        )
+                    )
+
+            missing = [sl.name for sl in sdef.required_slots() if sl.name not in filled]
+            if missing:
+                out.append(
+                    ValidationIssue(
+                        "missing_required_content_block",
+                        f"{s_path}.content_blocks",
+                        f'section "{section.id}" ({section.type}) is missing required slots {missing}',
+                    )
+                )
+    return out
+
+
+def _check_requested_pages(spec: DesignSpec, required_slugs: Optional[Sequence[str]]) -> List[ValidationIssue]:
+    if required_slugs is None:
+        return []
+    present = {page.slug for page in spec.pages}
+    return [
+        ValidationIssue("missing_requested_page", "pages", f'requested page "{slug}" is not in the page map')
+        for slug in required_slugs
+        if slug not in present
+    ]
 
 
 def _check_figma(spec: DesignSpec) -> List[ValidationIssue]:
