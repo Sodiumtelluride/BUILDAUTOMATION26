@@ -37,6 +37,7 @@ from .decisions import (
 )
 from .intake import PAGE_SLUGS, BrandingField, DesignIntake, PageName, missing_branding
 from .issues import ValidationIssue, format_issues_for_repair
+from .logo_palette import LogoPalette
 from .schema import (
     ColorRole,
     ContentBlock,
@@ -81,6 +82,14 @@ DEFAULT_COLORS: Dict[ColorRole, str] = {
 
 DEFAULT_FONTS = ("Source Serif 4", "Inter")  # (heading, body)
 DEFAULT_RADIUS = "0.5rem"
+
+# D8: reviewer-facing notes when colors come from (or could not come from) the logo.
+LOGO_PALETTE_SUMMARY = (
+    "Brand colors were derived from the uploaded logo because none were provided; confirm they match the brand."
+)
+LOGO_PALETTE_FAILED_SUMMARY = (
+    "No brand colors were provided and the logo could not be used ({reason}). BUILD default colors were applied."
+)
 
 # D4: features that need storage, and the recipe that provides it.
 FEATURE_DATA_RECIPES: Dict[Feature, DataRecipe] = {
@@ -237,9 +246,14 @@ def assemble_design_spec(
     plan: LayoutPlan,
     previous: Optional[DesignSpec] = None,
     revision: int = 1,
+    logo_palette: Optional[LogoPalette] = None,
 ) -> Dict[str, Any]:
     """
     Build the design_spec dict for validation. Pure function.
+
+    ``logo_palette`` is what the node derived from the logo (D8). It is only
+    used when the intake has a logo and no brand colors; ``None`` in that
+    situation is recorded as a palette that was not attempted.
 
     The result still goes through ``validate_design_spec`` — a plan that used
     an unknown section type or skipped a requested page assembles into a spec
@@ -254,7 +268,18 @@ def assemble_design_spec(
         if len(intake.brand_colors) > 1:
             colors["secondary"] = intake.brand_colors[1]
             brand_roles.append("secondary")
-    default_roles: List[ColorRole] = [r for r in colors if r not in brand_roles]
+    # D8: no brand colors but a logo -> the palette derived from it (or a note on why not).
+    palette: Optional[LogoPalette] = None
+    logo_roles: List[ColorRole] = []
+    if not intake.brand_colors and intake.logo is not None:
+        palette = logo_palette if logo_palette is not None else LogoPalette.failed("not_attempted")
+        if palette.primary is not None:
+            colors["primary"] = palette.primary
+            logo_roles.append("primary")
+            if palette.secondary is not None:
+                colors["secondary"] = palette.secondary
+                logo_roles.append("secondary")
+    default_roles: List[ColorRole] = [r for r in colors if r not in brand_roles and r not in logo_roles]
 
     if intake.brand_fonts:
         fonts = Fonts(
@@ -314,7 +339,9 @@ def assemble_design_spec(
 
     # -- Flags ----------------------------------------------------------------
     flags: List[Flag] = []
-    missing = missing_branding(intake)
+    # D10 fires only when no logo was uploaded. With a logo, D8 sets the colors
+    # (or records why it could not) and the reviewer sees that as an assumption.
+    missing = missing_branding(intake) if intake.logo is None else []
     if missing:
         flags.append(DefaultDesignTrackFlag(code="default_design_track", missing=missing))
     # Figma generation is out of scope for this milestone slice (PRD §5 flag off).
@@ -327,6 +354,8 @@ def assemble_design_spec(
         intake=intake,
         tokens=tokens,
         brand_roles=brand_roles,
+        logo_roles=logo_roles,
+        logo_palette=palette,
         default_roles=default_roles,
         pages=pages,
         section_sources=section_sources,
@@ -388,6 +417,8 @@ def _build_decisions(
     intake: DesignIntake,
     tokens: Tokens,
     brand_roles: List[ColorRole],
+    logo_roles: List[ColorRole],
+    logo_palette: Optional[LogoPalette],
     default_roles: List[ColorRole],
     pages: List[Page],
     section_sources: Dict[str, List[Source]],
@@ -433,6 +464,8 @@ def _build_decisions(
 
     if brand_roles:
         cover("token", [f"tokens.colors.{r}" for r in brand_roles], from_intake("brand_colors"), "code")
+    if logo_roles:
+        cover("token", [f"tokens.colors.{r}" for r in logo_roles], from_intake("logo"), "code")
     cover("token", [f"tokens.colors.{r}" for r in default_roles], from_default("build_tokens"), "code")
     cover(
         "token",
@@ -505,6 +538,30 @@ def _build_decisions(
                 method="code",
                 revision=revision,
                 summary="The intake content exclusions were applied as a hard constraint on every generated design decision.",
+            )
+
+    # D8: tell the reviewer the colors came from the logo, or why they could not.
+    if logo_palette is not None:
+        noted = any(
+            d.id not in superseded_ids(log)
+            and d.kind == "assumption"
+            and any(isinstance(s, IntakeSource) and s.ref == "logo" for s in d.sources)
+            for d in log
+        )
+        if not noted:
+            derived = logo_palette.primary is not None
+            log = record_decision(
+                log,
+                kind="assumption",
+                targets=["tokens.colors.primary", "tokens.colors.secondary"],
+                sources=from_intake("logo") if derived else from_intake("logo") + from_default("build_tokens"),
+                method="code",
+                revision=revision,
+                summary=(
+                    LOGO_PALETTE_SUMMARY
+                    if derived
+                    else LOGO_PALETTE_FAILED_SUMMARY.format(reason=logo_palette.failure)
+                ),
             )
 
     return log
