@@ -110,3 +110,40 @@ def test_hex_output_is_uppercase_six_digits() -> None:
 def test_pick_brand_colors_skips_low_saturation_then_picks_distinct_hue() -> None:
     primary, secondary = pick_brand_colors([(128, 128, 130), GREEN, (0x3E, 0x8D, 0x42), ORANGE])
     assert (primary, secondary) == ("#2E7D32", "#FFA000")
+
+
+# -- SVG logos: explicit colors in attributes and inline styles --------------
+
+SVG_HEADER = '<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">'
+
+
+def test_svg_fill_stroke_and_stop_colors_are_ranked_by_count() -> None:
+    svg = SVG_HEADER + (
+        '<rect fill="#2E7D32"/><rect fill="#2E7D32"/><circle style="fill:#2e7d32;stroke:none"/>'
+        '<path stroke="#FFA000"/><stop stop-color="#FFA000"/>'
+        '<path fill="none"/><path fill="currentColor"/><path fill="url(#grad)"/>'
+        "</svg>"
+    )
+    palette = extract_logo_palette(svg.encode(), "image/svg+xml")
+    assert (palette.primary, palette.secondary) == ("#2E7D32", "#FFA000")
+
+
+def test_svg_named_and_short_hex_colors_resolve() -> None:
+    svg = SVG_HEADER + '<rect fill="rebeccapurple"/><rect fill="rebeccapurple"/><rect fill="#fa0"/></svg>'
+    palette = extract_logo_palette(svg.encode(), "image/svg+xml")
+    assert (palette.primary, palette.secondary) == ("#663399", "#FFAA00")
+
+
+def test_svg_without_explicit_colors_yields_nothing() -> None:
+    svg = SVG_HEADER + '<path fill="currentColor" d="M0 0h10v10z"/></svg>'
+    assert extract_logo_palette(svg.encode(), "image/svg+xml") == LogoPalette.failed("no_usable_colors")
+
+
+def test_svg_black_and_white_yields_nothing() -> None:
+    svg = SVG_HEADER + '<rect fill="#000"/><rect fill="white"/></svg>'
+    assert extract_logo_palette(svg.encode(), "image/svg+xml") == LogoPalette.failed("no_usable_colors")
+
+
+def test_svg_is_detected_without_content_type() -> None:
+    svg = SVG_HEADER + '<rect fill="#1A3C6E"/></svg>'
+    assert extract_logo_palette(svg.encode(), None).primary == "#1A3C6E"

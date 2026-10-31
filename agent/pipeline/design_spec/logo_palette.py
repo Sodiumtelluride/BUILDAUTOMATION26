@@ -14,6 +14,12 @@ How a raster logo (PNG, JPG, WebP) is read:
   3. Median-cut quantize what is left to ``QUANTIZE_COLORS`` colors and rank
      them by pixel count.
 
+How an SVG logo is read: no rasterizer. Every ``fill``, ``stroke`` and
+``stop-color`` value in attributes or inline ``style`` is resolved with
+``PIL.ImageColor`` (hex, short hex, CSS names), ``none``/``currentColor``/
+``url(...)`` are skipped, and the same white/black filter and count ranking
+apply. An SVG that only uses ``currentColor`` therefore yields nothing.
+
 Picking the two brand colors from the ranked candidates:
   - primary   = the most frequent color with HSV saturation >= ``SATURATION_MIN``
   - secondary = the next such color whose hue differs by >= ``HUE_SEPARATION_DEG``
@@ -28,12 +34,17 @@ from __future__ import annotations
 
 import colorsys
 import io
+import re
+from collections import Counter
 from dataclasses import dataclass
 from typing import List, Literal, Optional, Sequence, Tuple
 
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageColor, UnidentifiedImageError
 
 RGB = Tuple[int, int, int]
+
+_SVG_COLOR_RE = re.compile(r"(?:fill|stroke|stop-color)\s*[:=]\s*[\"']?\s*([^\"';)\s>]+)", re.IGNORECASE)
+_SVG_SKIP_VALUES = frozenset({"none", "currentcolor", "inherit", "transparent"})
 
 NEAR_WHITE_MIN = 235
 NEAR_BLACK_MAX = 25
@@ -128,9 +139,36 @@ def _raster_candidates(data: bytes) -> Optional[List[RGB]]:
     return [rgb for _, rgb in ranked if is_usable(rgb)]
 
 
+def _is_svg(data: bytes, content_type: Optional[str]) -> bool:
+    if content_type is not None and content_type.lower().startswith("image/svg"):
+        return True
+    return "<svg" in data[:512].decode("utf-8", errors="ignore").lower()
+
+
+def _svg_candidates(text: str) -> List[RGB]:
+    """Ranked usable colors named in an SVG's fill, stroke and stop-color values."""
+    counts: Counter[RGB] = Counter()
+    for value in _SVG_COLOR_RE.findall(text):
+        lowered = value.lower()
+        if lowered in _SVG_SKIP_VALUES or lowered.startswith("url("):
+            continue
+        try:
+            resolved = ImageColor.getrgb(value)
+        except ValueError:
+            continue
+        rgb: RGB = (resolved[0], resolved[1], resolved[2])
+        if is_usable(rgb):
+            counts[rgb] += 1
+    return [rgb for rgb, _ in sorted(counts.items(), key=lambda item: (-item[1], item[0]))]
+
+
 def extract_logo_palette(data: bytes, content_type: Optional[str] = None) -> LogoPalette:
     """Derive the brand palette from logo bytes. Never raises for bad input."""
-    candidates = _raster_candidates(data)
+    candidates: Optional[List[RGB]]
+    if _is_svg(data, content_type):
+        candidates = _svg_candidates(data.decode("utf-8", errors="ignore"))
+    else:
+        candidates = _raster_candidates(data)
     if candidates is None:
         return LogoPalette.failed("unreadable")
     primary, secondary = pick_brand_colors(candidates)
