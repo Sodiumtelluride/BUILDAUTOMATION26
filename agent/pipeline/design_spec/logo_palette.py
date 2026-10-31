@@ -37,11 +37,15 @@ import io
 import re
 from collections import Counter
 from dataclasses import dataclass
-from typing import List, Literal, Optional, Sequence, Tuple
+from typing import Awaitable, Callable, List, Literal, Optional, Sequence, Tuple
 
 from PIL import Image, ImageColor, UnidentifiedImageError
 
 RGB = Tuple[int, int, int]
+
+# Fetches an asset URL -> (body, content type). The DESIGN node supplies the
+# real one; tests inject a fake, so nothing here touches the network.
+FetchAsset = Callable[[str], Awaitable[Tuple[bytes, Optional[str]]]]
 
 _SVG_COLOR_RE = re.compile(r"(?:fill|stroke|stop-color)\s*[:=]\s*[\"']?\s*([^\"';)\s>]+)", re.IGNORECASE)
 _SVG_SKIP_VALUES = frozenset({"none", "currentcolor", "inherit", "transparent"})
@@ -180,3 +184,12 @@ def extract_logo_palette(data: bytes, content_type: Optional[str] = None) -> Log
         candidates=tuple(to_hex(rgb) for rgb in candidates),
         failure=None,
     )
+
+
+async def logo_palette_for(url: str, fetch_asset: FetchAsset) -> LogoPalette:
+    """Fetch the logo and derive its palette. A failed fetch is a result, never an exception."""
+    try:
+        data, content_type = await fetch_asset(url)
+    except Exception:  # any fetch problem (scheme, network, size, status) reads the same to the reviewer
+        return LogoPalette.failed("fetch_failed")
+    return extract_logo_palette(data, content_type)
