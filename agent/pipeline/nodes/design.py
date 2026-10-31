@@ -19,8 +19,9 @@ injectable so tests run without a provider or network. The default uses the DESI
 
 from __future__ import annotations
 
+import asyncio
 import json
-from typing import Any, Awaitable, Callable, Dict, Mapping, Optional, Sequence, Tuple
+from typing import Any, Awaitable, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
 import httpx
 
@@ -54,18 +55,30 @@ LOGO_FETCH_TIMEOUT_SECONDS = 10.0
 async def fetch_https_asset(
     url: str, *, transport: Optional[httpx.AsyncBaseTransport] = None
 ) -> Tuple[bytes, Optional[str]]:
-    """Default asset fetcher: https only (private-bucket access is BUI-93), 10 s, 10 MB."""
+    """Default asset fetcher: a direct https URL only, no redirects (so the
+    scheme rule holds past the first hop), one total deadline, and a 10 MB cap
+    enforced while streaming. Private-bucket access (supabase://) is BUI-93."""
     if not url.lower().startswith("https://"):
         raise ValueError(f"asset URL must use https: {url}")
-    async with httpx.AsyncClient(
-        timeout=LOGO_FETCH_TIMEOUT_SECONDS, follow_redirects=True, transport=transport
-    ) as client:
-        response = await client.get(url)
-    if not 200 <= response.status_code < 300:
-        raise ValueError(f"asset fetch returned HTTP {response.status_code}: {url}")
-    if len(response.content) > MAX_LOGO_BYTES:
-        raise ValueError(f"asset exceeds {MAX_LOGO_BYTES} bytes: {url}")
-    return response.content, response.headers.get("content-type")
+    chunks: List[bytes] = []
+    received = 0
+    async with asyncio.timeout(LOGO_FETCH_TIMEOUT_SECONDS):
+        async with httpx.AsyncClient(
+            timeout=LOGO_FETCH_TIMEOUT_SECONDS, follow_redirects=False, transport=transport
+        ) as client:
+            async with client.stream("GET", url) as response:
+                if not 200 <= response.status_code < 300:
+                    raise ValueError(f"asset fetch returned HTTP {response.status_code}: {url}")
+                declared = response.headers.get("content-length")
+                if declared is not None and int(declared) > MAX_LOGO_BYTES:
+                    raise ValueError(f"asset declares {declared} bytes, over the {MAX_LOGO_BYTES} byte cap: {url}")
+                async for chunk in response.aiter_bytes():
+                    received += len(chunk)
+                    if received > MAX_LOGO_BYTES:
+                        raise ValueError(f"asset exceeds {MAX_LOGO_BYTES} bytes: {url}")
+                    chunks.append(chunk)
+                content_type = response.headers.get("content-type")
+    return b"".join(chunks), content_type
 
 
 async def run_design(

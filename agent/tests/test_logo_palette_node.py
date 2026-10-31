@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import io
 import uuid
-from typing import Any, Dict, List, Mapping, Optional, Tuple
+from typing import Any, AsyncIterator, Dict, List, Mapping, Optional, Tuple
 
 import httpx
 import pytest
@@ -13,6 +14,7 @@ from PIL import Image
 from pipeline.design_spec import DesignSpec, validate_design_spec
 from pipeline.design_spec.generation import DEFAULT_COLORS
 from pipeline.design_spec.validate import Valid
+from pipeline.nodes import design
 from pipeline.nodes.design import MAX_LOGO_BYTES, fetch_https_asset, run_design
 from pipeline.state import IntakeOutput, PipelineState
 
@@ -113,4 +115,42 @@ async def test_https_fetcher_rejects_error_status() -> None:
 async def test_https_fetcher_rejects_oversized_body() -> None:
     transport = httpx.MockTransport(lambda req: httpx.Response(200, content=b"x" * (MAX_LOGO_BYTES + 1)))
     with pytest.raises(ValueError):
+        await fetch_https_asset(LOGO_URL, transport=transport)
+
+
+async def test_https_fetcher_rejects_a_declared_oversize_before_reading_the_body() -> None:
+    transport = httpx.MockTransport(
+        lambda req: httpx.Response(200, content=b"tiny", headers={"content-length": str(MAX_LOGO_BYTES + 1)})
+    )
+    with pytest.raises(ValueError):
+        await fetch_https_asset(LOGO_URL, transport=transport)
+
+
+async def test_https_fetcher_does_not_follow_redirects() -> None:
+    requested: List[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requested.append(str(request.url))
+        if request.url.scheme == "https":
+            return httpx.Response(302, headers={"location": "http://169.254.169.254/latest/meta-data/"})
+        return httpx.Response(200, content=b"internal")
+
+    with pytest.raises(ValueError):
+        await fetch_https_asset(LOGO_URL, transport=httpx.MockTransport(handler))
+    assert requested == [LOGO_URL]
+
+
+class _Trickle(httpx.AsyncByteStream):
+    """A body that never finishes: one byte, then a long pause, forever."""
+
+    async def __aiter__(self) -> AsyncIterator[bytes]:
+        while True:
+            yield b"x"
+            await asyncio.sleep(0.2)
+
+
+async def test_https_fetcher_enforces_a_total_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(design, "LOGO_FETCH_TIMEOUT_SECONDS", 0.05)
+    transport = httpx.MockTransport(lambda req: httpx.Response(200, stream=_Trickle()))
+    with pytest.raises(TimeoutError):
         await fetch_https_asset(LOGO_URL, transport=transport)

@@ -57,6 +57,17 @@ SATURATION_MIN = 0.15
 HUE_SEPARATION_DEG = 30.0
 THUMBNAIL_PX = 128
 QUANTIZE_COLORS = 8
+# Only the formats the intake form accepts (plus WebP) are decoded; anything
+# else is "unreadable" rather than a trip through every Pillow plugin.
+RASTER_FORMATS: Tuple[str, ...] = ("PNG", "JPEG", "WEBP")
+# A flat 12000 x 12000 PNG is a few hundred KB on the wire but ~550 MB as RGBA.
+# No real logo comes near this; above it we do not decode at all.
+MAX_LOGO_PIXELS = 40_000_000
+
+_SVG_PROLOGUE_RE = re.compile(
+    r"^﻿?\s*(?:<\?xml[^>]*\?>\s*|<!DOCTYPE[^>]*>\s*|<!--.*?-->\s*)*", re.IGNORECASE | re.DOTALL
+)
+_SVG_ROOT_RE = re.compile(r"^<svg[\s>]", re.IGNORECASE)
 
 LogoPaletteFailure = Literal["fetch_failed", "unreadable", "no_usable_colors", "not_attempted"]
 
@@ -115,7 +126,9 @@ def pick_brand_colors(candidates: Sequence[RGB]) -> Tuple[Optional[str], Optiona
 def _raster_candidates(data: bytes) -> Optional[List[RGB]]:
     """Ranked usable colors of a raster image; None when the bytes are not an image."""
     try:
-        with Image.open(io.BytesIO(data)) as opened:
+        with Image.open(io.BytesIO(data), formats=RASTER_FORMATS) as opened:
+            if opened.width * opened.height > MAX_LOGO_PIXELS:
+                return None
             img = opened.convert("RGBA")
         img.thumbnail((THUMBNAIL_PX, THUMBNAIL_PX), Image.Resampling.NEAREST)
     except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError):
@@ -143,10 +156,23 @@ def _raster_candidates(data: bytes) -> Optional[List[RGB]]:
     return [rgb for _, rgb in ranked if is_usable(rgb)]
 
 
+def _mime(content_type: Optional[str]) -> Optional[str]:
+    """``"image/svg+xml; charset=utf-8"`` -> ``"image/svg+xml"``. The generic
+    ``application/octet-stream`` that object stores often serve counts as undeclared."""
+    if content_type is None:
+        return None
+    mime = content_type.split(";", 1)[0].strip().lower()
+    return None if mime in ("", "application/octet-stream") else mime
+
+
 def _is_svg(data: bytes, content_type: Optional[str]) -> bool:
-    if content_type is not None and content_type.lower().startswith("image/svg"):
-        return True
-    return "<svg" in data[:512].decode("utf-8", errors="ignore").lower()
+    """A declared type decides. Without one, ``<svg`` must be the root element,
+    so an HTML error page with an inline icon is not mistaken for a logo."""
+    mime = _mime(content_type)
+    if mime is not None:
+        return mime.startswith("image/svg")
+    head = data[:512].decode("utf-8", errors="ignore")
+    return _SVG_ROOT_RE.match(_SVG_PROLOGUE_RE.sub("", head, count=1)) is not None
 
 
 def _svg_candidates(text: str) -> List[RGB]:
@@ -168,6 +194,9 @@ def _svg_candidates(text: str) -> List[RGB]:
 
 def extract_logo_palette(data: bytes, content_type: Optional[str] = None) -> LogoPalette:
     """Derive the brand palette from logo bytes. Never raises for bad input."""
+    mime = _mime(content_type)
+    if mime is not None and not mime.startswith("image/"):
+        return LogoPalette.failed("unreadable")  # e.g. a storage error page served as text/html
     candidates: Optional[List[RGB]]
     if _is_svg(data, content_type):
         candidates = _svg_candidates(data.decode("utf-8", errors="ignore"))
@@ -192,4 +221,7 @@ async def logo_palette_for(url: str, fetch_asset: FetchAsset) -> LogoPalette:
         data, content_type = await fetch_asset(url)
     except Exception:  # any fetch problem (scheme, network, size, status) reads the same to the reviewer
         return LogoPalette.failed("fetch_failed")
-    return extract_logo_palette(data, content_type)
+    try:
+        return extract_logo_palette(data, content_type)
+    except Exception:  # a decoder surprise (even MemoryError) must not fail the job
+        return LogoPalette.failed("unreadable")

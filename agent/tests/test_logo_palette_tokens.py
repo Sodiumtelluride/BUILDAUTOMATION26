@@ -16,7 +16,7 @@ from pipeline.design_spec import (
     validate_design_spec,
 )
 from pipeline.design_spec.generation import DEFAULT_COLORS
-from pipeline.design_spec.schema import Decision, DefaultDesignTrackFlag, IntakeSource
+from pipeline.design_spec.schema import Decision, DefaultDesignTrackFlag, DefaultSource, IntakeSource
 from pipeline.design_spec.validate import Valid
 
 MakeIntake = Callable[[], Dict[str, Any]]
@@ -126,4 +126,38 @@ def test_rerun_does_not_duplicate_logo_decisions(make_intake: MakeIntake, make_p
     first = _assemble(intake_dict, make_plan(), DERIVED)
     second = _assemble(intake_dict, make_plan(), DERIVED, previous=first, revision=2)
     assert len(_assumptions_citing_logo(second)) == 1
-    assert len([d for d in second.decisions if d.kind == "token" and _cites_logo(d)]) == 1
+    assert second.decisions == first.decisions  # same fetch outcome: nothing new to say
+
+
+def _current_token_decisions(spec: DesignSpec, target: str) -> List[Decision]:
+    return [d for d in current_decisions(spec) if d.kind == "token" and target in d.targets]
+
+
+def test_rerun_whose_fetch_turned_out_differently_supersedes_logo_decisions(
+    make_intake: MakeIntake, make_plan: MakePlan
+) -> None:
+    intake_dict = make_intake()
+    intake_dict["brand_colors"] = []
+
+    # rev 1: the fetch failed, defaults applied
+    first = _assemble(intake_dict, make_plan(), LogoPalette.failed("fetch_failed"))
+    # rev 2: the fetch worked
+    second = _assemble(intake_dict, make_plan(), DERIVED, previous=first, revision=2)
+    assert second.tokens.colors["primary"] == "#2E7D32"
+    for target in ("tokens.colors.primary", "tokens.colors.secondary"):
+        (decision,) = _current_token_decisions(second, target)
+        assert _cites_logo(decision)
+        assert not any(isinstance(s, DefaultSource) for s in decision.sources)
+        assert decision.supersedes is not None
+    (note,) = _assumptions_citing_logo(second)
+    assert "derived from the uploaded logo" in (note.summary or "")
+    assert note.supersedes is not None
+    assert len(second.decisions) > len(first.decisions)  # append-only: rev 1's log is intact
+
+    # rev 3: the logo is gone again; tokens revert and the log says so
+    third = _assemble(intake_dict, make_plan(), LogoPalette.failed("unreadable"), previous=second, revision=3)
+    assert third.tokens.colors["primary"] == DEFAULT_COLORS["primary"]
+    (decision,) = _current_token_decisions(third, "tokens.colors.primary")
+    assert any(isinstance(s, DefaultSource) for s in decision.sources)
+    (note,) = _assumptions_citing_logo(third)
+    assert "unreadable" in (note.summary or "")

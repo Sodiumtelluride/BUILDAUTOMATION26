@@ -90,6 +90,8 @@ LOGO_PALETTE_SUMMARY = (
 LOGO_PALETTE_FAILED_SUMMARY = (
     "No brand colors were provided and the logo could not be used ({reason}). BUILD default colors were applied."
 )
+# The roles the logo path decides (D8), whether or not extraction worked.
+LOGO_COLOR_ROLES: Tuple[ColorRole, ColorRole] = ("primary", "secondary")
 
 # D4: features that need storage, and the recipe that provides it.
 FEATURE_DATA_RECIPES: Dict[Feature, DataRecipe] = {
@@ -268,18 +270,19 @@ def assemble_design_spec(
         if len(intake.brand_colors) > 1:
             colors["secondary"] = intake.brand_colors[1]
             brand_roles.append("secondary")
-    # D8: no brand colors but a logo -> the palette derived from it (or a note on why not).
+    # D8: no brand colors but a logo -> the palette derived from it (or a note on
+    # why not). Either way primary and secondary then belong to the logo path and
+    # get their own decisions in _build_decisions, not the bulk default one.
     palette: Optional[LogoPalette] = None
-    logo_roles: List[ColorRole] = []
+    logo_managed: List[ColorRole] = []
     if not intake.brand_colors and intake.logo is not None:
         palette = logo_palette if logo_palette is not None else LogoPalette.failed("not_attempted")
+        logo_managed = list(LOGO_COLOR_ROLES)
         if palette.primary is not None:
             colors["primary"] = palette.primary
-            logo_roles.append("primary")
             if palette.secondary is not None:
                 colors["secondary"] = palette.secondary
-                logo_roles.append("secondary")
-    default_roles: List[ColorRole] = [r for r in colors if r not in brand_roles and r not in logo_roles]
+    default_roles: List[ColorRole] = [r for r in colors if r not in brand_roles and r not in logo_managed]
 
     if intake.brand_fonts:
         fonts = Fonts(
@@ -354,7 +357,6 @@ def assemble_design_spec(
         intake=intake,
         tokens=tokens,
         brand_roles=brand_roles,
-        logo_roles=logo_roles,
         logo_palette=palette,
         default_roles=default_roles,
         pages=pages,
@@ -417,7 +419,6 @@ def _build_decisions(
     intake: DesignIntake,
     tokens: Tokens,
     brand_roles: List[ColorRole],
-    logo_roles: List[ColorRole],
     logo_palette: Optional[LogoPalette],
     default_roles: List[ColorRole],
     pages: List[Page],
@@ -464,8 +465,63 @@ def _build_decisions(
 
     if brand_roles:
         cover("token", [f"tokens.colors.{r}" for r in brand_roles], from_intake("brand_colors"), "code")
-    if logo_roles:
-        cover("token", [f"tokens.colors.{r}" for r in logo_roles], from_intake("logo"), "code")
+    # D8: primary and secondary on the logo path. The fetch is an external input
+    # that can turn out differently on a rerun, so each role gets a single-target
+    # decision that a later run supersedes one for one (the radius precedent),
+    # and the reviewer note is superseded with them.
+    if logo_palette is not None:
+        derived = logo_palette.primary is not None
+        new_summary = (
+            LOGO_PALETTE_SUMMARY if derived else LOGO_PALETTE_FAILED_SUMMARY.format(reason=logo_palette.failure)
+        )
+        prior_note = next(
+            (
+                d
+                for d in log
+                if d.id not in superseded_ids(log)
+                and d.kind == "assumption"
+                and any(isinstance(s, IntakeSource) and s.ref == "logo" for s in d.sources)
+            ),
+            None,
+        )
+        colors_changed = previous is not None and any(
+            previous.tokens.colors.get(role) != tokens.colors[role] for role in LOGO_COLOR_ROLES
+        )
+        flipped = prior_note is not None and (colors_changed or prior_note.summary != new_summary)
+        if flipped:
+            covered.discard("tokens.colors.primary")
+            covered.discard("tokens.colors.secondary")
+        for role in LOGO_COLOR_ROLES:
+            target = f"tokens.colors.{role}"
+            from_logo = derived if role == "primary" else logo_palette.secondary is not None
+            if from_logo:
+                sources = from_intake("logo")
+            elif derived:
+                sources = from_default("build_tokens")  # no distinct second hue in the logo
+            else:
+                sources = from_intake("logo") + from_default("build_tokens")
+            supersedes: Optional[str] = None
+            if flipped:
+                supersedes = next(
+                    (
+                        d.id
+                        for d in log
+                        if d.id not in superseded_ids(log) and d.kind == "token" and d.targets == [target]
+                    ),
+                    None,
+                )
+            cover("token", [target], sources, "code", supersedes=supersedes)
+        if prior_note is None or flipped:
+            log = record_decision(
+                log,
+                kind="assumption",
+                targets=["tokens.colors.primary", "tokens.colors.secondary"],
+                sources=from_intake("logo") if derived else from_intake("logo") + from_default("build_tokens"),
+                method="code",
+                revision=revision,
+                supersedes=prior_note.id if (flipped and prior_note is not None) else None,
+                summary=new_summary,
+            )
     cover("token", [f"tokens.colors.{r}" for r in default_roles], from_default("build_tokens"), "code")
     cover(
         "token",
@@ -538,30 +594,6 @@ def _build_decisions(
                 method="code",
                 revision=revision,
                 summary="The intake content exclusions were applied as a hard constraint on every generated design decision.",
-            )
-
-    # D8: tell the reviewer the colors came from the logo, or why they could not.
-    if logo_palette is not None:
-        noted = any(
-            d.id not in superseded_ids(log)
-            and d.kind == "assumption"
-            and any(isinstance(s, IntakeSource) and s.ref == "logo" for s in d.sources)
-            for d in log
-        )
-        if not noted:
-            derived = logo_palette.primary is not None
-            log = record_decision(
-                log,
-                kind="assumption",
-                targets=["tokens.colors.primary", "tokens.colors.secondary"],
-                sources=from_intake("logo") if derived else from_intake("logo") + from_default("build_tokens"),
-                method="code",
-                revision=revision,
-                summary=(
-                    LOGO_PALETTE_SUMMARY
-                    if derived
-                    else LOGO_PALETTE_FAILED_SUMMARY.format(reason=logo_palette.failure)
-                ),
             )
 
     return log

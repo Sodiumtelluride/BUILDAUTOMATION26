@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import io
-from typing import Sequence, Tuple
+from typing import Optional, Sequence, Tuple
 
+import pytest
 from PIL import Image
 
-from pipeline.design_spec.logo_palette import LogoPalette, extract_logo_palette, pick_brand_colors
+from pipeline.design_spec import logo_palette
+from pipeline.design_spec.logo_palette import LogoPalette, extract_logo_palette, logo_palette_for, pick_brand_colors
 
 RGB = Tuple[int, int, int]
 GREEN: RGB = (0x2E, 0x7D, 0x32)
@@ -147,3 +149,59 @@ def test_svg_black_and_white_yields_nothing() -> None:
 def test_svg_is_detected_without_content_type() -> None:
     svg = SVG_HEADER + '<rect fill="#1A3C6E"/></svg>'
     assert extract_logo_palette(svg.encode(), None).primary == "#1A3C6E"
+
+
+def test_svg_sniff_skips_doctype_and_comments() -> None:
+    svg = '\n<!-- exported -->\n<!DOCTYPE svg>\n' + SVG_HEADER + '<rect fill="#1A3C6E"/></svg>'
+    assert extract_logo_palette(svg.encode(), None).primary == "#1A3C6E"
+
+
+# -- Untrusted bytes at the boundary: declared types, sniffing, decoders, size --
+
+HTML_WITH_ICON = (
+    "<!doctype html><html><head><title>Error</title></head><body>"
+    '<svg xmlns="http://www.w3.org/2000/svg"><path fill="#E53935" d="M0 0h1v1z"/></svg>'
+    "<h1>Storage error</h1></body></html>"
+).encode()
+
+
+def test_html_declared_content_type_is_unreadable_even_with_an_inline_svg() -> None:
+    assert extract_logo_palette(HTML_WITH_ICON, "text/html; charset=utf-8") == LogoPalette.failed("unreadable")
+
+
+def test_sniffing_requires_svg_as_the_root_element() -> None:
+    assert extract_logo_palette(HTML_WITH_ICON, None) == LogoPalette.failed("unreadable")
+
+
+def test_non_image_declared_types_are_unreadable() -> None:
+    assert extract_logo_palette(b'{"error":"not found"}', "application/json") == LogoPalette.failed("unreadable")
+
+
+def test_octet_stream_counts_as_undeclared_and_is_sniffed() -> None:
+    # Object stores often serve uploads as application/octet-stream; the bytes decide.
+    assert extract_logo_palette(_png([(GREEN, 100)]), "application/octet-stream").primary == "#2E7D32"
+    svg = SVG_HEADER + '<rect fill="#1A3C6E"/></svg>'
+    assert extract_logo_palette(svg.encode(), "application/octet-stream").primary == "#1A3C6E"
+
+
+def test_unlisted_image_formats_are_unreadable() -> None:
+    buf = io.BytesIO()
+    Image.new("RGB", (8, 8), GREEN).save(buf, format="BMP")
+    assert extract_logo_palette(buf.getvalue(), "image/bmp") == LogoPalette.failed("unreadable")
+
+
+def test_images_over_the_pixel_budget_are_unreadable(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(logo_palette, "MAX_LOGO_PIXELS", 1_000)
+    assert extract_logo_palette(_png([(GREEN, 100)]), "image/png") == LogoPalette.failed("unreadable")
+
+
+async def test_logo_palette_for_survives_extraction_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+    def boom(data: bytes, content_type: Optional[str] = None) -> LogoPalette:
+        raise MemoryError("decoder blew up")
+
+    monkeypatch.setattr(logo_palette, "extract_logo_palette", boom)
+
+    async def fetcher(url: str) -> Tuple[bytes, Optional[str]]:
+        return b"whatever", "image/png"
+
+    assert await logo_palette_for("https://example.org/logo.png", fetcher) == LogoPalette.failed("unreadable")
