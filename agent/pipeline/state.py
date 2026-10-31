@@ -150,6 +150,9 @@ class DesignOutput(BaseModel):
 
     page_map: Dict[str, Any]
     component_patterns: List[str] = Field(default_factory=list)
+    design_spec: Optional[Dict[str, Any]] = None
+    """The validated design_spec contract (pipeline.design_spec.schema.DesignSpec),
+    stored as plain JSON so downstream stages and reruns can re-validate it."""
     designed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 

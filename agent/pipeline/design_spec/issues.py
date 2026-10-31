@@ -36,6 +36,14 @@ IssueCode = Literal[
     "content_block_id_regenerated",
     # D5 + Pipeline DoD: the decision log is append-only across revisions
     "decision_history_changed",
+    # D2: sections, components and content slots come from the approved
+    # BUILD section catalog (catalog.py)
+    "unknown_section_type",
+    "section_components_not_in_catalog",
+    "content_block_catalog_mismatch",
+    "missing_required_content_block",
+    # Every page requested in intake must appear in the page map
+    "missing_requested_page",
 ]
 
 

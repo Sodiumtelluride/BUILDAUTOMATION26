@@ -1,0 +1,18 @@
+{
+  "organization_name": "Pioneer Valley Food Bank",
+  "organization_type": "nonprofit",
+  "primary_goal": "accept_donations",
+  "organization_description": "We eliminate food insecurity in Western Massachusetts through community partnerships, mobile pantries, and direct food distribution across Hampden and Hampshire counties.",
+  "target_audience": "Families and individuals experiencing food insecurity, plus local donors and volunteers.",
+  "pages": ["home", "about", "team", "donate", "contact", "faq"],
+  "features": ["contact_form", "donation_button", "newsletter_signup"],
+  "tone": ["friendly", "inspiring", "professional"],
+  "visual_style": "Warm and welcoming with rounded corners, generous whitespace, and photography of real people.",
+  "brand_colors": ["#2E7D32", "#FFA000"],
+  "brand_fonts": ["Source Serif 4", "Inter"],
+  "logo": "https://assets.build-umass.org/jobs/a1b2c3d4/logo_green.svg",
+  "brand_assets": ["https://assets.build-umass.org/jobs/a1b2c3d4/photo_distribution_day.jpg"],
+  "reference_sites": ["https://feedingamerica.org", "https://foodbankwma.org"],
+  "integrations": ["stripe", "google_analytics", "mailchimp"],
+  "content_exclusions": "Never mention political parties or make promises of guaranteed aid."
+}

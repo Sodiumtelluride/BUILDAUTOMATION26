@@ -29,7 +29,11 @@ def test_adding_a_section_is_allowed_and_reported(make_spec: MakeSpec) -> None:
             "id": "stats-bar-1",
             "type": "stats-bar",
             "components": [],
-            "content_blocks": [{"id": "home.stats.label", "kind": "label", "max_chars": 30}],
+            "content_blocks": [
+                {"id": "home.stats.stat-1", "kind": "list_item", "max_chars": 60},
+                {"id": "home.stats.stat-2", "kind": "list_item", "max_chars": 60},
+                {"id": "home.stats.stat-3", "kind": "list_item", "max_chars": 60},
+            ],
         }
     )
     nxt["decisions"].append(
@@ -46,7 +50,11 @@ def test_adding_a_section_is_allowed_and_reported(make_spec: MakeSpec) -> None:
     assert isinstance(result, Valid)
     assert result.diff is not None
     assert result.diff.sections_added == ("stats-bar-1",)
-    assert result.diff.content_blocks_added == ("home.stats.label",)
+    assert result.diff.content_blocks_added == (
+        "home.stats.stat-1",
+        "home.stats.stat-2",
+        "home.stats.stat-3",
+    )
 
 
 def test_removing_a_section_is_allowed_and_reported(make_spec: MakeSpec) -> None:
