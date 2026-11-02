@@ -1,0 +1,135 @@
+{
+  "name": "Sample shadcn kit",
+  "document": {
+    "id": "0:0",
+    "name": "Document",
+    "type": "DOCUMENT",
+    "children": [
+      {
+        "id": "0:1",
+        "name": "Screens",
+        "type": "CANVAS",
+        "children": [
+          {
+            "id": "1:1",
+            "name": "Home – Desktop",
+            "type": "FRAME",
+            "absoluteBoundingBox": { "x": 0, "y": 0, "width": 1440, "height": 1024 },
+            "children": [
+              {
+                "id": "1:2",
+                "name": "Navbar",
+                "type": "FRAME",
+                "children": [
+                  {
+                    "id": "1:3",
+                    "name": "Button",
+                    "type": "INSTANCE",
+                    "componentId": "10:1",
+                    "children": [{ "id": "1:4", "name": "Sign in", "type": "TEXT" }]
+                  }
+                ]
+              },
+              {
+                "id": "1:5",
+                "name": "Hero",
+                "type": "FRAME",
+                "children": [
+                  { "id": "1:6", "name": "Badge", "type": "INSTANCE", "componentId": "11:1" },
+                  { "id": "1:7", "name": "Button", "type": "INSTANCE", "componentId": "10:2" }
+                ]
+              },
+              {
+                "id": "1:8",
+                "name": "Card",
+                "type": "INSTANCE",
+                "componentId": "12:1",
+                "children": [
+                  { "id": "1:9", "name": "Card Title", "type": "TEXT" },
+                  { "id": "1:10", "name": "Button", "type": "INSTANCE", "componentId": "10:1" }
+                ]
+              },
+              { "id": "1:11", "name": "Divider", "type": "RECTANGLE" },
+              { "id": "1:12", "name": "Logo Cloud", "type": "INSTANCE", "componentId": "13:1" },
+              { "id": "1:13", "name": "Icon / Heart", "type": "INSTANCE", "componentId": "14:1" },
+              { "id": "1:14", "name": "Dialog", "type": "INSTANCE", "componentId": "15:1", "visible": false },
+              { "id": "1:15", "name": "Input", "type": "INSTANCE", "componentId": "16:1" }
+            ]
+          },
+          {
+            "id": "2:1",
+            "name": "Home – Mobile",
+            "type": "FRAME",
+            "absoluteBoundingBox": { "x": 1600, "y": 0, "width": 375, "height": 812 },
+            "children": [
+              { "id": "2:2", "name": "Mobile Menu", "type": "FRAME", "children": [] },
+              { "id": "2:3", "name": "Button", "type": "INSTANCE", "componentId": "10:1" },
+              {
+                "id": "2:4",
+                "name": "Card",
+                "type": "INSTANCE",
+                "componentId": "12:1",
+                "children": [{ "id": "2:5", "name": "Input", "type": "INSTANCE", "componentId": "16:1" }]
+              }
+            ]
+          },
+          {
+            "id": "3:1",
+            "name": "About",
+            "type": "SECTION",
+            "children": [
+              {
+                "id": "3:2",
+                "name": "About – Desktop",
+                "type": "FRAME",
+                "absoluteBoundingBox": { "x": 0, "y": 1200, "width": 1440, "height": 900 },
+                "children": [{ "id": "3:3", "name": "Tabs", "type": "INSTANCE", "componentId": "17:1" }]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0:2",
+        "name": "↳ Button",
+        "type": "CANVAS",
+        "children": [
+          {
+            "id": "10:0",
+            "name": "Button",
+            "type": "COMPONENT_SET",
+            "children": [
+              { "id": "10:1", "name": "Variant=Default, Size=default", "type": "COMPONENT" },
+              { "id": "10:2", "name": "Variant=Outline, Size=default", "type": "COMPONENT" }
+            ]
+          },
+          {
+            "id": "4:1",
+            "name": "Button docs",
+            "type": "FRAME",
+            "absoluteBoundingBox": { "x": 0, "y": 0, "width": 1440, "height": 600 },
+            "children": [{ "id": "4:2", "name": "Button", "type": "INSTANCE", "componentId": "10:1" }]
+          }
+        ]
+      }
+    ]
+  },
+  "components": {
+    "10:1": { "key": "k1", "name": "Variant=Default, Size=default", "componentSetId": "10:0" },
+    "10:2": { "key": "k2", "name": "Variant=Outline, Size=default", "componentSetId": "10:0" },
+    "11:1": { "key": "k3", "name": "Badge/Default" },
+    "12:1": { "key": "k4", "name": "Type=Default", "componentSetId": "12:0" },
+    "13:1": { "key": "k5", "name": "Logo Cloud" },
+    "14:1": { "key": "k6", "name": "Icon / Heart" },
+    "15:1": { "key": "k7", "name": "State=Open", "componentSetId": "15:0" },
+    "16:1": { "key": "k8", "name": "State=Default", "componentSetId": "16:0" },
+    "17:1": { "key": "k9", "name": "Variant=Default", "componentSetId": "17:0" }
+  },
+  "componentSets": {
+    "10:0": { "key": "s1", "name": "Button" },
+    "12:0": { "key": "s2", "name": "Card" },
+    "15:0": { "key": "s3", "name": "Dialog" },
+    "16:0": { "key": "s4", "name": "Input" },
+    "17:0": { "key": "s5", "name": "Tabs" }
+  }
+}
