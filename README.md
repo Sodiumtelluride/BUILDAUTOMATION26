@@ -21,6 +21,100 @@ npm run dev
 
 Open <http://localhost:3000>. Public pages render without database credentials, but saving a submission requires the configured, migrated database. Authentication uses existing users with bcrypt password hashes and JWT sessions; signup/account provisioning is outside this intake feature.
 
+## Manual test: submit the intake form end to end
+
+Use this to confirm that a submission made in the browser is saved to the database. It takes about 20 minutes the first time. Uploads are skipped; see [File uploads](#file-uploads) to test those.
+
+### 1. Use your own test database
+
+Do **not** point `DATABASE_URL` at a shared team or production database: step 3 applies migrations to whatever database it names.
+
+Create a free personal project at [neon.tech](https://neon.tech) (any PostgreSQL 15+ database works) and copy its connection string. It starts with `postgresql://`.
+
+### 2. Configure the app
+
+From the repository root:
+
+```sh
+cp .env.example .env.local
+openssl rand -base64 32
+```
+
+In `.env.local`:
+
+- `DATABASE_URL`: your connection string from step 1.
+- `AUTH_SECRET`: the random text printed by `openssl`.
+- Leave the three `SUPABASE_*` values blank.
+
+`.env.local` is git-ignored, so the database password is never committed.
+
+### 3. Install, migrate and start
+
+```sh
+npm ci
+npm run db:migrate
+npm run dev
+```
+
+`npm run dev` keeps running; leave that terminal open.
+
+### 4. Submit the form
+
+Open <http://localhost:3000/intake>. Optionally open the browser's DevTools (F12), go to the **Network** tab, and keep it open while you submit.
+
+Fill in each step. These answers pass validation and avoid any file upload:
+
+| Step | Field | Value |
+|---|---|---|
+| 1 | Sensitive-data acknowledgement | Checked |
+| 1 | Organization name / contact name | `Test Org` / `Test Person` |
+| 1 | Contact email | `test@example.org` |
+| 1 | Organization type | `Nonprofit` |
+| 2 | Primary goal | `Attract new members` |
+| 2 | Organization description (50+ characters) | `A test nonprofit used to check that intake submissions are saved correctly.` |
+| 2 | Target audience (30+ characters) | `Local families and volunteers in our area.` |
+| 2 | Pages | Select at least one |
+| 3 | Logo | `No — please create a simple text-based logo` |
+| 3 | Visual style (30+ characters) | `Clean, warm and friendly with plenty of white space.` |
+| 4 | Existing content | `No — please generate it from my description` |
+| 4 | Tone | Select one or two |
+| 5 | Domain | `No — a BUILD subdomain is fine for now` |
+
+Everything else can stay blank. Submit on the last step.
+
+**Expected:** the page shows a success message with a **reference number**. The form only shows success after the API confirms the save, so a missing reference number means it was not saved. In the Network tab, `POST /api/intake` returns a success status with the same reference number.
+
+### 5. Confirm the row in the database
+
+In your database's SQL editor (Neon: **SQL Editor**), run:
+
+```sql
+select reference_no, project_name, client_email, status, created_at
+from intake_submissions
+order by created_at desc
+limit 1;
+```
+
+**Expected:** one row with the reference number from step 4. The full set of answers is stored as versioned JSON in the `notes` column, and a matching job is created in `intake_jobs` with status `queued`:
+
+```sql
+select id, status, created_at
+from intake_jobs
+order by created_at desc
+limit 1;
+```
+
+### Troubleshooting
+
+| Symptom | Likely cause |
+|---|---|
+| `npm ci` fails or warns about the engine | Node is older than 20.9. Check with `node -v`. |
+| `npm run db:migrate` fails to connect | `DATABASE_URL` is wrong or missing `?sslmode=require` (Neon needs it). |
+| The form submits but shows an error instead of a reference number | The database isn't migrated, or `DATABASE_URL` points at a different database. Rerun `npm run db:migrate`. |
+| A submission with an attached file fails | Expected without storage settings; see [File uploads](#file-uploads). |
+
+Stop the app with `Ctrl + C` when you're done.
+
 ## File uploads
 
 To accept attachments, configure `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `INTAKE_UPLOAD_BUCKET` on the server. Create the bucket in Supabase Storage in advance and leave it **private**. The service key must never use a `NEXT_PUBLIC_` variable or appear in frontend code.
