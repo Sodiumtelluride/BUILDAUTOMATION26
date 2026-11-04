@@ -1,6 +1,6 @@
 {
-  "id": "98457f27-906d-456f-b808-4003cdc30de6",
-  "prevId": "aff1ceba-fe63-41fc-abf9-619715692e9d",
+  "id": "7734f9b8-9aea-49ba-871f-26dc039f7fd7",
+  "prevId": "8630e4c2-b38d-4091-a5b7-3f82b5c2d7da",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -52,15 +52,15 @@
         "assets_job_id_intake_jobs_id_fk": {
           "name": "assets_job_id_intake_jobs_id_fk",
           "tableFrom": "assets",
+          "tableTo": "intake_jobs",
           "columnsFrom": [
             "job_id"
           ],
-          "tableTo": "intake_jobs",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -316,15 +316,15 @@
         "cost_logs_job_id_intake_jobs_id_fk": {
           "name": "cost_logs_job_id_intake_jobs_id_fk",
           "tableFrom": "cost_logs",
+          "tableTo": "intake_jobs",
           "columnsFrom": [
             "job_id"
           ],
-          "tableTo": "intake_jobs",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -381,38 +381,38 @@
         "deployments_job_id_intake_jobs_id_fk": {
           "name": "deployments_job_id_intake_jobs_id_fk",
           "tableFrom": "deployments",
+          "tableTo": "intake_jobs",
           "columnsFrom": [
             "job_id"
           ],
-          "tableTo": "intake_jobs",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "deployments_deployed_by_users_id_fk": {
           "name": "deployments_deployed_by_users_id_fk",
           "tableFrom": "deployments",
+          "tableTo": "users",
           "columnsFrom": [
             "deployed_by"
           ],
-          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "deployments_job_id_unique": {
           "name": "deployments_job_id_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "job_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {},
@@ -482,15 +482,15 @@
         "intake_jobs_org_id_organizations_id_fk": {
           "name": "intake_jobs_org_id_organizations_id_fk",
           "tableFrom": "intake_jobs",
+          "tableTo": "organizations",
           "columnsFrom": [
             "org_id"
           ],
-          "tableTo": "organizations",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -646,15 +646,15 @@
         "job_stages_job_id_intake_jobs_id_fk": {
           "name": "job_stages_job_id_intake_jobs_id_fk",
           "tableFrom": "job_stages",
+          "tableTo": "intake_jobs",
           "columnsFrom": [
             "job_id"
           ],
-          "tableTo": "intake_jobs",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -784,28 +784,28 @@
         "reviewer_actions_job_id_intake_jobs_id_fk": {
           "name": "reviewer_actions_job_id_intake_jobs_id_fk",
           "tableFrom": "reviewer_actions",
+          "tableTo": "intake_jobs",
           "columnsFrom": [
             "job_id"
           ],
-          "tableTo": "intake_jobs",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "reviewer_actions_reviewer_id_users_id_fk": {
           "name": "reviewer_actions_reviewer_id_users_id_fk",
           "tableFrom": "reviewer_actions",
+          "tableTo": "users",
           "columnsFrom": [
             "reviewer_id"
           ],
-          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},

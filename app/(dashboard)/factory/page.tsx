@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { auth } from "@/src/auth"
-import { db } from "@/src/db"
+import { getDb } from "@/src/db"
 import { projectMetrics } from "@/src/db/schema/project-metrics"
 
 const CLUB_ROLES = ["admin", "reviewer", "member"]
@@ -9,7 +9,7 @@ export default async function FactoryPage() {
   const session = await auth()
   if (!session?.user || !CLUB_ROLES.includes(session.user.role)) redirect("/login")
 
-  const projects = await db.select().from(projectMetrics)
+  const projects = await getDb().select().from(projectMetrics)
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-10">
