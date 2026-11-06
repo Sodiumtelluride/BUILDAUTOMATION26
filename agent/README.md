@@ -12,6 +12,7 @@ before deployment.
 | `pipeline/contracts.py` | Per-stage input/output contracts and readiness checks |
 | `pipeline/config.py` | Per-node model/retry/budget config, env-overridable |
 | `pipeline/nodes/` | One module per stage node (not yet implemented) |
+| `pipeline/template_spec/` | Intake answers → Claude prompt → `design-spec.json` in the site template's contract (mock provider by default) |
 | `tests/fixtures/` | Realistic JSON snapshots for unit testing |
 | `pyproject.toml` | Python project metadata and dependencies |
 
@@ -172,6 +173,28 @@ ready, missing = STAGE_CONTRACTS[StageEnum.SEO].is_ready(state)
 print(ready)    # False
 print(missing)  # ['content_output', 'code_generation_output']
 ```
+
+## Intake to design-spec.json (demo flow)
+
+Turns a stored intake (the `{version, answers, attachments, jobId}` blob the intake API writes) into the
+`design-spec.json` that `../BUILD_TEMPLATE_REPO` builds a site from. The contract (JSON Schema and section
+catalog) is vendored from the template under `pipeline/template_spec/template/`; `pytest` checks it is in sync
+when `BUILD_TEMPLATE_REPO` points at a checkout.
+
+```bash
+# 1. Generate a spec. The default provider is a mock that replies with tests/fixtures/template_design_spec_valid.json.
+python -m pipeline.template_spec.cli --answers tests/fixtures/intake_answers_complete.json --out /tmp/design-spec.json
+
+# 2. Build the site from it (scaffold placeholder content, apply tokens, lint, typecheck, build).
+scripts/build_site_from_spec.sh /tmp/design-spec.json            # template dir defaults to ../BUILD_TEMPLATE_REPO
+
+# Manual path: write the prompt, paste system.md then user.md into Claude Code, save its reply, then validate it.
+python -m pipeline.template_spec.cli --answers tests/fixtures/intake_answers_complete.json --print-prompt /tmp/prompt
+python -m pipeline.template_spec.cli --answers tests/fixtures/intake_answers_complete.json --validate /tmp/claude-spec.json
+```
+
+`--provider anthropic` calls the Messages API through `langchain_anthropic` with the DESIGN node's model
+(`ANTHROPIC_API_KEY` from Doppler). It is wired but not yet exercised end-to-end.
 
 ## Setup
 
