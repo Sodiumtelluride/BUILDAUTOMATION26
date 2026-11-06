@@ -40,6 +40,12 @@ def test_validate_valid_file_exits_0(tmp_path: pathlib.Path) -> None:
     assert main(["--answers", ANSWERS, "--validate", str(FIX / "template_design_spec_valid.json")]) == 0
 
 
+def test_validate_accepts_a_fenced_reply_saved_from_claude(tmp_path: pathlib.Path) -> None:
+    path = tmp_path / "reply.md"
+    path.write_text("Here is the spec:\n```json\n" + (FIX / "template_design_spec_valid.json").read_text() + "```\n")
+    assert main(["--answers", ANSWERS, "--validate", str(path)]) == 0
+
+
 def test_invalid_mock_spec_writes_nothing(tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
     path = tmp_path / "bad.json"
     path.write_text("not json")

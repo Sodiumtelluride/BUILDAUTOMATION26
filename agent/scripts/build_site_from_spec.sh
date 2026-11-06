@@ -13,6 +13,10 @@ fi
 spec="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 dir="${2:-$(cd "$(dirname "$0")/../.." && pwd)/../BUILD_TEMPLATE_REPO}"
 cd "$dir"
+if ! grep -q '"name": "build-site-template"' package.json 2>/dev/null; then
+  echo "error: $(pwd) is not the BUILD site template (no build-site-template package.json); nothing changed" >&2
+  exit 2
+fi
 
 rm -f content/content.json content/seo.json
 cp "$spec" content/design-spec.json

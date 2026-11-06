@@ -70,3 +70,35 @@ async def test_job_id_mismatch_is_an_issue() -> None:
     intake, notes = _intake()
     result = await generate_design_spec(intake, notes, uuid.uuid4(), mock_provider(), max_attempts=1)
     assert result.spec is None and any(i.startswith("job_id:") for i in result.issues)
+
+
+async def test_missing_flags_are_added_from_the_intake() -> None:
+    intake, notes = _intake()
+    unflagged = json.loads(VALID)
+    unflagged["flags"] = []
+
+    async def provider(system: str, user: str) -> str:
+        return json.dumps(unflagged)
+
+    result = await generate_design_spec(intake, notes, JOB, provider)
+    assert result.spec is not None
+    flags = {(f["code"], f["detail"]) for f in result.spec["flags"]}
+    for feature in ("contact_form", "donation_button", "newsletter_signup"):
+        assert any(code == "unsupported_feature" and feature in detail for code, detail in flags), feature
+    assert any(code == "font_substituted" and "Source Serif 4" in detail for code, detail in flags)
+
+
+async def test_existing_flags_are_not_duplicated() -> None:
+    intake, notes = _intake()
+    result = await generate_design_spec(intake, notes, JOB, mock_provider())
+    assert result.spec is not None
+    assert len(result.spec["flags"]) == len(json.loads(VALID)["flags"])
+
+
+async def test_member_form_feature_requires_the_form_section() -> None:
+    raw = json.loads(json.dumps(RAW))
+    raw["answers"]["features"] = ["Member application form"]
+    intake, notes = map_intake_answers(raw["answers"], raw["attachments"])
+    result = await generate_design_spec(intake, notes, JOB, mock_provider(), max_attempts=1)
+    assert result.spec is None
+    assert "features: member_application_form requires a member-application-form section" in result.issues

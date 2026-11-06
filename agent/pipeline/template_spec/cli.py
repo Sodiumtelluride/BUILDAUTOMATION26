@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any, Dict, Sequence
 
 from .catalog import load_catalog
-from .generate import generate_design_spec, requested_slugs
+from .generate import generate_design_spec, parse_spec_text, requested_slugs
 from .intake_mapping import map_intake_answers
 from .prompt import render_system_prompt, render_user_message
 from .provider import DEFAULT_MOCK_SPEC, SpecProvider, anthropic_provider, mock_provider
@@ -54,7 +54,7 @@ def main(argv: Sequence[str]) -> int:
 
     if args.validate:
         try:
-            spec = json.loads(Path(args.validate).read_text())
+            spec = parse_spec_text(Path(args.validate).read_text())  # tolerates a fenced reply saved from Claude Code
         except (OSError, ValueError) as exc:
             return _fail(f"cannot read {args.validate}: {exc}")
         issues = validate_template_spec(spec, requested_slugs=requested_slugs(intake))

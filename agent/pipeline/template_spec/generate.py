@@ -12,12 +12,12 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence
 
-from .catalog import load_catalog
+from .catalog import TemplateCatalog, load_catalog
 from .intake import PAGE_SLUGS, DesignIntake
 from .intake_mapping import IntakeNotes
-from .prompt import render_system_prompt, render_user_message
+from .prompt import FLAG_FONT_SUBSTITUTED, FLAG_UNSUPPORTED_FEATURE, render_system_prompt, render_user_message
 from .provider import SpecProvider
-from .validate import validate_template_spec
+from .validate import MEMBER_FORM_TYPE, validate_template_spec
 
 
 @dataclass
@@ -46,6 +46,46 @@ def requested_slugs(intake: DesignIntake) -> List[str]:
     return [PAGE_SLUGS[name] for name in intake.pages]
 
 
+MEMBER_FORM_FEATURE = "member_application_form"
+
+
+def reconcile_flags(spec: Dict[str, Any], intake: DesignIntake, catalog: TemplateCatalog) -> List[str]:
+    """Make the owner's "flag, don't drop" rule deterministic.
+
+    Adds the flags the intake alone determines when the model left them out
+    (an ``unsupported_feature`` per feature the catalog cannot render, a
+    ``font_substituted`` when the brand fonts are not bundled) and returns
+    issues for what cannot be patched: the member application form feature
+    and its section must agree.
+    """
+    flags: List[Dict[str, str]] = spec["flags"]
+
+    def has_flag(code: str, needle: str) -> bool:
+        return any(f["code"] == code and needle in f["detail"] for f in flags)
+
+    renderable = {MEMBER_FORM_FEATURE}
+    for feature in intake.features:
+        if feature not in renderable and not has_flag(FLAG_UNSUPPORTED_FEATURE, feature):
+            flags.append({"code": FLAG_UNSUPPORTED_FEATURE, "detail": f"{feature} has no section in the template catalog"})
+    unbundled = [font for font in intake.brand_fonts if font not in catalog.fonts]
+    if unbundled and not any(f["code"] == FLAG_FONT_SUBSTITUTED for f in flags):
+        chosen = spec["tokens"]["fonts"]
+        flags.append(
+            {
+                "code": FLAG_FONT_SUBSTITUTED,
+                "detail": f"{', '.join(unbundled)} not bundled; using {chosen['heading']} / {chosen['body']}",
+            }
+        )
+
+    has_form_section = any(s["type"] == MEMBER_FORM_TYPE for p in spec["pages"] for s in p["sections"])
+    wants_form = MEMBER_FORM_FEATURE in intake.features
+    if wants_form and not has_form_section:
+        return [f"features: {MEMBER_FORM_FEATURE} requires a {MEMBER_FORM_TYPE} section"]
+    if has_form_section and not wants_form:
+        return [f"pages: a {MEMBER_FORM_TYPE} section was added but {MEMBER_FORM_FEATURE} was not requested"]
+    return []
+
+
 async def generate_design_spec(
     intake: DesignIntake,
     notes: IntakeNotes,
@@ -54,7 +94,8 @@ async def generate_design_spec(
     *,
     max_attempts: int = 2,
 ) -> SpecResult:
-    system = render_system_prompt(load_catalog())
+    catalog = load_catalog()
+    system = render_system_prompt(catalog)
     issues: Sequence[str] = ()
     raw = ""
     attempts = 0
@@ -70,6 +111,8 @@ async def generate_design_spec(
             issues = [f"job_id: expected {job_id}, got {spec.get('job_id')!r}"]
             continue
         issues = validate_template_spec(spec, requested_slugs=requested_slugs(intake))
+        if not issues:
+            issues = reconcile_flags(spec, intake, catalog)
         if not issues:
             return SpecResult(spec=spec, issues=[], attempts=attempts, raw=raw)
     return SpecResult(spec=None, issues=list(issues), attempts=attempts, raw=raw)
