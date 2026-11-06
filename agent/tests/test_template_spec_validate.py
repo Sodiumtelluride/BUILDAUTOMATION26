@@ -77,6 +77,12 @@ def test_requested_pages_missing_and_extra() -> None:
     assert "pages: /blog was not requested" in issues
 
 
+def test_duplicate_page_slug() -> None:
+    s = _spec()
+    s["pages"][2]["slug"] = "/about"
+    assert "pages[2].slug: duplicate page slug /about" in validate_template_spec(s)
+
+
 def test_form_submissions_needs_member_form_section() -> None:
     s = _spec()
     s["data_requirements"] = [{"recipe": "form_submissions"}]

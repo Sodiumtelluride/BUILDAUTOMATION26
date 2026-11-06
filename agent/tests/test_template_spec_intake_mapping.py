@@ -54,6 +54,20 @@ def test_join_apply_and_other_page() -> None:
     assert notes.dropped == ['pages: "Other" was requested but has no route']
 
 
+def test_home_is_always_included() -> None:
+    raw = _raw()
+    raw["answers"]["pages"] = ["Other"]
+    intake, notes = map_intake_answers(raw["answers"], raw["attachments"])
+    assert intake.pages == ["home"]
+    assert notes.dropped == [
+        'pages: "Other" was requested but has no route',
+        "pages: home was not requested; added because every site needs a home page",
+    ]
+    raw["answers"]["pages"] = ["About", "Team"]
+    intake, _ = map_intake_answers(raw["answers"], raw["attachments"])
+    assert intake.pages == ["home", "about", "team"]
+
+
 def test_other_feature_and_integration_go_to_notes() -> None:
     raw = _raw()
     raw["answers"].update(

@@ -53,6 +53,7 @@ async def test_repair_round_includes_previous_issues() -> None:
     result = await generate_design_spec(intake, notes, JOB, provider)
     assert result.spec is not None and result.attempts == 2
     assert "tokens.fonts.body: must be Inter" in seen[1] and "must be Inter" not in seen[0]
+    assert json.dumps(bad) in seen[1], "the repair message must carry the previous reply"
 
 
 async def test_gives_up_after_max_attempts() -> None:
@@ -66,10 +67,12 @@ async def test_gives_up_after_max_attempts() -> None:
     assert result.issues == ["model reply is not a JSON object"]
 
 
-async def test_job_id_mismatch_is_an_issue() -> None:
+async def test_job_id_is_overwritten_from_the_job() -> None:
     intake, notes = _intake()
-    result = await generate_design_spec(intake, notes, uuid.uuid4(), mock_provider(), max_attempts=1)
-    assert result.spec is None and any(i.startswith("job_id:") for i in result.issues)
+    other = uuid.uuid4()
+    result = await generate_design_spec(intake, notes, other, mock_provider(), max_attempts=1)
+    assert result.spec is not None and result.attempts == 1
+    assert result.spec["job_id"] == str(other)
 
 
 async def test_missing_flags_are_added_from_the_intake() -> None:

@@ -36,7 +36,11 @@ def _schema_issues(spec: Mapping[str, Any]) -> List[str]:
 def _section_issues(spec: Mapping[str, Any], catalog: TemplateCatalog) -> List[str]:
     issues: List[str] = []
     seen_ids: set[str] = set()
+    seen_slugs: set[str] = set()
     for p, page in enumerate(spec["pages"]):
+        if page["slug"] in seen_slugs:
+            issues.append(f"pages[{p}].slug: duplicate page slug {page['slug']}")
+        seen_slugs.add(page["slug"])
         for s, section in enumerate(page["sections"]):
             at = f"pages[{p}].sections[{s}]"
             if section["id"] in seen_ids:

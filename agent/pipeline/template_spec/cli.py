@@ -57,6 +57,7 @@ def main(argv: Sequence[str]) -> int:
             spec = parse_spec_text(Path(args.validate).read_text())  # tolerates a fenced reply saved from Claude Code
         except (OSError, ValueError) as exc:
             return _fail(f"cannot read {args.validate}: {exc}")
+        spec["job_id"] = str(args.job_id or (uuid.UUID(blob["jobId"]) if blob.get("jobId") else uuid.uuid4()))
         issues = validate_template_spec(spec, requested_slugs=requested_slugs(intake))
         for issue in issues:
             print(issue)

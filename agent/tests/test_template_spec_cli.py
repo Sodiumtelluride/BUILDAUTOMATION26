@@ -40,6 +40,14 @@ def test_validate_valid_file_exits_0(tmp_path: pathlib.Path) -> None:
     assert main(["--answers", ANSWERS, "--validate", str(FIX / "template_design_spec_valid.json")]) == 0
 
 
+def test_validate_ignores_the_reply_job_id(tmp_path: pathlib.Path) -> None:
+    spec = json.loads((FIX / "template_design_spec_valid.json").read_text())
+    spec["job_id"] = "00000000-0000-0000-0000-000000000000"
+    path = tmp_path / "spec.json"
+    path.write_text(json.dumps(spec))
+    assert main(["--answers", ANSWERS, "--validate", str(path)]) == 0
+
+
 def test_validate_accepts_a_fenced_reply_saved_from_claude(tmp_path: pathlib.Path) -> None:
     path = tmp_path / "reply.md"
     path.write_text("Here is the spec:\n```json\n" + (FIX / "template_design_spec_valid.json").read_text() + "```\n")

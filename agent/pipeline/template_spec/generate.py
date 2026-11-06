@@ -100,16 +100,14 @@ async def generate_design_spec(
     raw = ""
     attempts = 0
     for attempts in range(1, max_attempts + 1):
-        user = render_user_message(intake, notes, job_id, previous_issues=issues)
+        user = render_user_message(intake, notes, job_id, previous_issues=issues, previous_reply=raw)
         raw = await provider(system, user)
         try:
             spec = parse_spec_text(raw)
         except ValueError as exc:
             issues = [str(exc)]
             continue
-        if spec.get("job_id") != str(job_id):
-            issues = [f"job_id: expected {job_id}, got {spec.get('job_id')!r}"]
-            continue
+        spec["job_id"] = str(job_id)  # ours, not the model's: a clerical slip must not burn the repair round
         issues = validate_template_spec(spec, requested_slugs=requested_slugs(intake))
         if not issues:
             issues = reconcile_flags(spec, intake, catalog)

@@ -224,9 +224,13 @@ def render_system_prompt(catalog: TemplateCatalog) -> str:
 
 
 def render_user_message(
-    intake: DesignIntake, notes: IntakeNotes, job_id: uuid.UUID, previous_issues: Sequence[str] = ()
+    intake: DesignIntake,
+    notes: IntakeNotes,
+    job_id: uuid.UUID,
+    previous_issues: Sequence[str] = (),
+    previous_reply: str = "",
 ) -> str:
-    """The per-job message: intake, notes, job id, and repair feedback on a retry."""
+    """The per-job message: intake, notes, job id, and on a retry the previous reply with its problems."""
     lines = [
         f"Job id: {job_id}",
         "",
@@ -250,4 +254,6 @@ def render_user_message(
         lines += ["", "Notes:", *note_lines]
     if previous_issues:
         lines += ["", "Your previous spec had these problems. Return the corrected complete spec:", *[f"- {i}" for i in previous_issues]]
+        if previous_reply:
+            lines += ["", "Your previous reply was:", previous_reply]
     return "\n".join(lines)

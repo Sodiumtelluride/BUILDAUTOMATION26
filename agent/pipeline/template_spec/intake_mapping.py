@@ -147,6 +147,9 @@ def map_intake_answers(
     pages = _lookup_many("pages", answers["pages"], PAGES)
     if "Other" in answers["pages"]:
         dropped.append('pages: "Other" was requested but has no route')
+    if "home" not in pages:
+        pages.insert(0, "home")
+        dropped.append("pages: home was not requested; added because every site needs a home page")
 
     features = _lookup_many("features", answers["features"], FEATURES)
     if "Other" in answers["features"]:
