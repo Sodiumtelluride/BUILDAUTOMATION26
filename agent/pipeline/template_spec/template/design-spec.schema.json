@@ -1,0 +1,230 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+    },
+    "tokens": {
+      "type": "object",
+      "properties": {
+        "colors": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "enum": [
+              "background",
+              "foreground",
+              "card",
+              "card-foreground",
+              "popover",
+              "popover-foreground",
+              "primary",
+              "primary-foreground",
+              "secondary",
+              "secondary-foreground",
+              "muted",
+              "muted-foreground",
+              "accent",
+              "accent-foreground",
+              "destructive",
+              "destructive-foreground",
+              "border",
+              "input",
+              "ring"
+            ]
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
+          }
+        },
+        "fonts": {
+          "type": "object",
+          "properties": {
+            "heading": {
+              "type": "string",
+              "minLength": 1
+            },
+            "body": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "heading",
+            "body"
+          ]
+        },
+        "radius": {
+          "type": "string",
+          "pattern": "^(0|\\d*\\.?\\d+(px|rem|em))$"
+        },
+        "contrast_adjustments": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "required": [
+        "colors",
+        "fonts",
+        "radius",
+        "contrast_adjustments"
+      ]
+    },
+    "pages": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "pattern": "^\\/$|^\\/[a-z0-9-]+(\\/[a-z0-9-]+)*$"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "type": {
+                  "type": "string"
+                },
+                "components": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "content_blocks": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "headline",
+                          "subhead",
+                          "body",
+                          "label",
+                          "cta",
+                          "image",
+                          "stat",
+                          "items"
+                        ]
+                      },
+                      "max_chars": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "kind"
+                    ]
+                  }
+                },
+                "source_fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "type",
+                "components",
+                "content_blocks",
+                "source_fields"
+              ]
+            }
+          }
+        },
+        "required": [
+          "slug",
+          "sections"
+        ]
+      }
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "data_requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "recipe": {
+            "type": "string",
+            "enum": [
+              "form_submissions",
+              "events"
+            ]
+          }
+        },
+        "required": [
+          "recipe"
+        ]
+      }
+    },
+    "integrations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "flags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "detail"
+        ]
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "figma_url": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "job_id",
+    "tokens",
+    "pages",
+    "features",
+    "data_requirements",
+    "integrations",
+    "flags",
+    "assumptions"
+  ]
+}
