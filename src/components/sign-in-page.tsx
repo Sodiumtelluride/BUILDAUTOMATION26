@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useState } from "react"
 
 // Shared look for the text boxes; turns violet when focused
@@ -123,6 +124,9 @@ export default function SignInPage({
           </form>
 
           <p className="text-center text-sm text-zinc-500">Forgot your password? Ask an admin to reset it.</p>
+          <Link href="/" className="text-center text-sm text-zinc-400 underline underline-offset-4 transition-colors hover:text-zinc-100">
+            ← Back to homepage
+          </Link>
         </div>
       </section>
 
