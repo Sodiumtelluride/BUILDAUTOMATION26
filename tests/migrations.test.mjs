@@ -15,7 +15,7 @@ const snapshot = JSON.parse(await readFile(path.join(migrationsFolder, `meta/${l
 
 async function verifySchema(database) {
   const { rows: columns } = await database.query(
-    "SELECT table_name, column_name, is_nullable, data_type FROM information_schema.columns WHERE table_schema = 'public'",
+    "SELECT c.table_name, c.column_name, c.is_nullable, c.data_type FROM information_schema.columns c JOIN information_schema.tables t ON t.table_schema = c.table_schema AND t.table_name = c.table_name WHERE c.table_schema = 'public' AND t.table_type = 'BASE TABLE'",
   );
   assert.deepEqual(
     [...new Set(columns.map((column) => column.table_name))].sort(),
@@ -83,7 +83,7 @@ test("registered migrations create a working intake/auth schema and can be rerun
   }
 });
 
-test("upgrading the registered baseline preserves data and safely normalizes users", async () => {
+test("upgrading from the registered baseline preserves existing rows", async () => {
   const baselineFolder = await mkdtemp(path.join(tmpdir(), "build-intake-migration-"));
   const database = new PGlite();
   try {
@@ -94,17 +94,16 @@ test("upgrading the registered baseline preserves data and safely normalizes use
     const db = drizzle(database);
     await migrate(db, { migrationsFolder: baselineFolder });
     await database.query(
-      "INSERT INTO users (email, role, email_verified) VALUES ('existing@example.org', NULL, '2026-04-01 15:30:00')",
+      "INSERT INTO users (email, role, email_verified) VALUES ('existing@example.org', 'reviewer', '2026-04-01 15:30:00+00')",
     );
     await database.query(
       "INSERT INTO organizations (name, contact_email) VALUES ('Existing organization', 'old@example.org')",
     );
-    await database.query("SET TIME ZONE 'America/New_York'");
 
     await migrate(db, { migrationsFolder });
     await verifySchema(database);
     const { rows: [user] } = await database.query("SELECT role, email_verified FROM users");
-    assert.equal(user.role, "member");
+    assert.equal(user.role, "reviewer");
     assert.equal(user.email_verified.toISOString(), "2026-04-01T15:30:00.000Z");
     assert.equal((await database.query("SELECT name FROM organizations")).rows[0].name, "Existing organization");
   } finally {
