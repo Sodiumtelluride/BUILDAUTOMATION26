@@ -18,11 +18,9 @@ it:
 npm run db:generate
 ```
 
-The first migration creates the core tables. The next migration completes the
-auth and intake tables and aligns the `users` columns with the current schema.
-The old unregistered drafts are archived in `legacy/` and must not be applied.
+The baseline migration (`0000_init`) creates the core, auth and intake tables.
+Later migrations are layered on top of it. The old unregistered drafts are
+archived in `legacy/` and must not be applied.
 
-The `users.email_verified` timestamp conversion interprets historical timestamp
-values as UTC so the result does not depend on the migrating session's timezone.
-Existing users with a null role receive the default `member` role before the
-not-null constraint is added.
+Every migration must have a unique `idx` in `meta/_journal.json`, with a
+matching `meta/<idx>_snapshot.json`.
