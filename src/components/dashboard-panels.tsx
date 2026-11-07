@@ -40,6 +40,8 @@ export function StatTile({ label, value, note, status }: { label: string; value:
 
 // Label and dot color for each project status (status colors only where they mean good or bad)
 const PROJECT_STATUS: Record<string, { label: string; color: string }> = {
+  pending: { label: "New", color: BLUE },
+  cancelled: { label: "Cancelled", color: NEUTRAL },
   queued: { label: "Queued", color: NEUTRAL },
   in_progress: { label: "In progress", color: BLUE },
   awaiting_review: { label: "Awaiting review", color: STATUS.warning },
@@ -56,6 +58,17 @@ export function StatusPill({ status }: { status: string }) {
       <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
       {label}
     </span>
+  )
+}
+
+/** Shown instead of a page's content when the signed-in role isn't allowed to see it. */
+export function NoAccess({ message }: { message: string }) {
+  return (
+    <main className="p-6 md:p-10">
+      <div className={CARD}>
+        <p className="text-sm text-zinc-400">{message}</p>
+      </div>
+    </main>
   )
 }
 

@@ -33,7 +33,7 @@ const SECTIONS = [
       },
       {
         label: "Intakes",
-        href: null,
+        href: "/intakes",
         icon: (
           <>
             <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
