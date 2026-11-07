@@ -43,3 +43,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# python
+__pycache__/
+.venv/
+.mypy_cache/
+.pytest_cache/
+
+# figma file cache (fetched JSON, can be large)
+agent/.cache/
+
