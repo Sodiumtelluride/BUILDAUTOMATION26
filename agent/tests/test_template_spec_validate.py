@@ -7,6 +7,7 @@ import json
 import pathlib
 from typing import Any, Dict
 
+from pipeline.template_spec.catalog import load_catalog
 from pipeline.template_spec.validate import validate_template_spec
 
 SPEC: Dict[str, Any] = json.loads((pathlib.Path(__file__).parent / "fixtures" / "template_design_spec_valid.json").read_text())
@@ -47,7 +48,7 @@ def test_wrong_block_kind_and_foreign_block() -> None:
     blocks.append({"id": "programs.items", "kind": "items"})
     issues = validate_template_spec(s)
     assert "pages[0].sections[0].content_blocks[0].kind: hero.headline must be headline, got body" in issues
-    assert "pages[0].sections[0].content_blocks[5].id: programs.items is not a block of hero-centered" in issues
+    assert "pages[0].sections[0].content_blocks[5].id: programs.items is not a block of hero-bold" in issues
 
 
 def test_duplicate_section_id() -> None:
@@ -106,3 +107,9 @@ def test_member_form_section_needs_form_submissions() -> None:
         }
     )
     assert "pages[4].sections[2].type: member-application-form requires data_requirements form_submissions" in validate_template_spec(s)
+
+
+def test_fixture_uses_the_bold_family() -> None:
+    bold = set(load_catalog().themes["bold"].values())
+    types = {s["type"] for p in SPEC["pages"] for s in p["sections"]}
+    assert types <= bold

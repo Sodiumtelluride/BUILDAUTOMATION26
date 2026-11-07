@@ -10,7 +10,7 @@ from typing import Any, Dict
 from pipeline.template_spec.catalog import load_catalog
 from pipeline.template_spec.intake import PAGE_SLUGS
 from pipeline.template_spec.intake_mapping import map_intake_answers
-from pipeline.template_spec.prompt import render_system_prompt, render_user_message
+from pipeline.template_spec.prompt import EXAMPLE_SPEC, render_system_prompt, render_user_message
 
 FIX = pathlib.Path(__file__).parent / "fixtures"
 RAW: Dict[str, Any] = json.loads((FIX / "intake_answers_complete.json").read_text())
@@ -60,3 +60,11 @@ def test_user_message_carries_intake_notes_job_id_and_repair() -> None:
     assert "tokens.fonts.body: must be Inter" in text and "previous" in text.lower()
     for name in intake.pages:
         assert PAGE_SLUGS[name] in text
+
+
+def test_system_prompt_defaults_to_the_bold_family() -> None:
+    cat = load_catalog()
+    text = render_system_prompt(cat)
+    assert "Default to bold" in text
+    example_types = {s["type"] for p in json.loads(EXAMPLE_SPEC)["pages"] for s in p["sections"]}
+    assert example_types and example_types <= set(cat.themes["bold"].values())

@@ -35,7 +35,7 @@
       "sections": [
         {
           "id": "hero-1",
-          "type": "hero-centered",
+          "type": "hero-bold",
           "components": [
             "button"
           ],
@@ -71,7 +71,7 @@
         },
         {
           "id": "stats-1",
-          "type": "stats-bar",
+          "type": "stats-bold",
           "components": [],
           "content_blocks": [
             {
@@ -98,7 +98,7 @@
         },
         {
           "id": "programs-1",
-          "type": "programs-grid",
+          "type": "programs-bold",
           "components": [
             "card"
           ],
@@ -126,7 +126,7 @@
         },
         {
           "id": "cta-1",
-          "type": "cta-band",
+          "type": "cta-bold",
           "components": [
             "button"
           ],
@@ -157,7 +157,7 @@
       "sections": [
         {
           "id": "hero-2",
-          "type": "hero-centered",
+          "type": "hero-bold",
           "components": [
             "button"
           ],
@@ -191,7 +191,7 @@
         },
         {
           "id": "programs-2",
-          "type": "programs-grid",
+          "type": "programs-bold",
           "components": [
             "card"
           ],
@@ -223,7 +223,7 @@
       "sections": [
         {
           "id": "hero-3",
-          "type": "hero-centered",
+          "type": "hero-bold",
           "components": [
             "button"
           ],
@@ -257,7 +257,7 @@
         },
         {
           "id": "team-1",
-          "type": "team-grid",
+          "type": "team-bold",
           "components": [
             "card"
           ],
@@ -289,7 +289,7 @@
       "sections": [
         {
           "id": "hero-4",
-          "type": "hero-centered",
+          "type": "hero-bold",
           "components": [
             "button"
           ],
@@ -323,7 +323,7 @@
         },
         {
           "id": "cta-2",
-          "type": "cta-band",
+          "type": "cta-bold",
           "components": [
             "button"
           ],
@@ -355,7 +355,7 @@
       "sections": [
         {
           "id": "hero-5",
-          "type": "hero-centered",
+          "type": "hero-bold",
           "components": [
             "button"
           ],
@@ -389,7 +389,7 @@
         },
         {
           "id": "cta-3",
-          "type": "cta-band",
+          "type": "cta-bold",
           "components": [
             "button"
           ],
@@ -421,7 +421,7 @@
       "sections": [
         {
           "id": "hero-6",
-          "type": "hero-centered",
+          "type": "hero-bold",
           "components": [
             "button"
           ],
@@ -455,7 +455,7 @@
         },
         {
           "id": "programs-3",
-          "type": "programs-grid",
+          "type": "programs-bold",
           "components": [
             "card"
           ],
@@ -502,11 +502,11 @@
     },
     {
       "code": "unsupported_feature",
-      "detail": "contact_form has no section in the template catalog; the contact page uses a cta-band pointing at the contact email"
+      "detail": "contact_form has no section in the template catalog; the contact page uses a cta-bold pointing at the contact email"
     },
     {
       "code": "unsupported_feature",
-      "detail": "donation_button has no section in the template catalog; the donate page uses a cta-band linking to Stripe"
+      "detail": "donation_button has no section in the template catalog; the donate page uses a cta-bold linking to Stripe"
     },
     {
       "code": "unsupported_feature",
@@ -514,8 +514,8 @@
     }
   ],
   "assumptions": [
-    "The classic theme family was chosen for the friendly, professional tone and the rounded, generous visual style.",
+    "The bold theme family (the default) fits the friendly, energetic tone and the rounded, generous visual style.",
     "primary is the client's forest green #2E7D32 and secondary the warm amber #FFA000; the remaining roles are a light palette derived for WCAG AA body contrast.",
-    "The FAQ page reuses programs-grid, with each question as an item, because the catalog has no accordion."
+    "The FAQ page reuses programs-bold, with each question as an item, because the catalog has no accordion."
   ]
 }

@@ -67,7 +67,7 @@ _EXAMPLE: Dict[str, Any] = {
             "sections": [
                 {
                     "id": "hero-1",
-                    "type": "hero-centered",
+                    "type": "hero-bold",
                     "components": ["button"],
                     "content_blocks": [
                         _block("hero.headline", "headline"),
@@ -80,7 +80,7 @@ _EXAMPLE: Dict[str, Any] = {
                 },
                 {
                     "id": "stats-1",
-                    "type": "stats-bar",
+                    "type": "stats-bold",
                     "components": [],
                     "content_blocks": [
                         _block("stats.headline", "headline"),
@@ -92,7 +92,7 @@ _EXAMPLE: Dict[str, Any] = {
                 },
                 {
                     "id": "cta-1",
-                    "type": "cta-band",
+                    "type": "cta-bold",
                     "components": ["button"],
                     "content_blocks": [_block("cta.headline", "headline"), _block("cta.body", "body"), _block("cta.button", "cta")],
                     "source_fields": ["primary_goal"],
@@ -104,7 +104,7 @@ _EXAMPLE: Dict[str, Any] = {
             "sections": [
                 {
                     "id": "hero-2",
-                    "type": "hero-centered",
+                    "type": "hero-bold",
                     "components": ["button"],
                     "content_blocks": [
                         _block("hero.headline", "headline"),
@@ -115,7 +115,7 @@ _EXAMPLE: Dict[str, Any] = {
                 },
                 {
                     "id": "programs-2",
-                    "type": "programs-grid",
+                    "type": "programs-bold",
                     "components": ["card"],
                     "content_blocks": [
                         _block("programs.headline", "headline"),
@@ -132,11 +132,11 @@ _EXAMPLE: Dict[str, Any] = {
     "integrations": ["stripe", "google_analytics"],
     "flags": [
         {"code": FLAG_FONT_SUBSTITUTED, "detail": "Source Serif 4 is not bundled; Instrument Serif used for headings"},
-        {"code": FLAG_UNSUPPORTED_FEATURE, "detail": "contact_form has no section in the catalog; the contact page uses a cta-band"},
-        {"code": FLAG_UNSUPPORTED_FEATURE, "detail": "donation_button has no section in the catalog; the donate page uses a cta-band linking to Stripe"},
+        {"code": FLAG_UNSUPPORTED_FEATURE, "detail": "contact_form has no section in the catalog; the contact page uses a cta-bold"},
+        {"code": FLAG_UNSUPPORTED_FEATURE, "detail": "donation_button has no section in the catalog; the donate page uses a cta-bold linking to Stripe"},
     ],
     "assumptions": [
-        "The classic theme family was chosen for the friendly, professional tone and the rounded visual style.",
+        "The bold theme family (the default) fits the friendly, energetic tone and the visual style asked for.",
         "primary is the client's forest green #2E7D32 and secondary the warm amber #FFA000; the other roles are a light palette with WCAG AA body contrast.",
     ],
 }
@@ -190,9 +190,10 @@ def render_system_prompt(catalog: TemplateCatalog) -> str:
         "",
         "3. Theme families (one visual treatment per role):",
         *_theme_lines(catalog),
-        "Pick ONE family for the whole site from the tone and the visual style description (classic = balanced,",
-        "minimal = quiet and spacious, editorial = type-led and story-driven, bold = high-contrast and energetic),",
-        "and use only that family's type ids. member-application-form belongs to no family and is used only when",
+        "Use ONE family for the whole site. Default to bold (high-contrast and energetic); pick another only when the",
+        "tone and visual style clearly ask for it (classic = balanced, minimal = quiet and spacious, editorial =",
+        "type-led and story-driven), and say why in assumptions. Use only that family's type ids.",
+        "member-application-form belongs to no family and is used only when",
         "member_application_form is among the features.",
         "",
         "4. Pages: produce exactly the requested pages, no others, with these slugs:",
