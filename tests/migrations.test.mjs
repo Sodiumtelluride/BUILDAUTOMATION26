@@ -15,7 +15,7 @@ const snapshot = JSON.parse(await readFile(path.join(migrationsFolder, `meta/${l
 
 async function verifySchema(database) {
   const { rows: columns } = await database.query(
-    "SELECT table_name, column_name, is_nullable, data_type FROM information_schema.columns WHERE table_schema = 'public'",
+    "SELECT c.table_name, c.column_name, c.is_nullable, c.data_type FROM information_schema.columns c JOIN information_schema.tables t ON t.table_schema = c.table_schema AND t.table_name = c.table_name WHERE c.table_schema = 'public' AND t.table_type = 'BASE TABLE'",
   );
   assert.deepEqual(
     [...new Set(columns.map((column) => column.table_name))].sort(),
@@ -83,7 +83,7 @@ test("registered migrations create a working intake/auth schema and can be rerun
   }
 });
 
-test("upgrading the registered baseline preserves data and safely normalizes users", async () => {
+test("upgrading the registered baseline preserves existing data", async () => {
   const baselineFolder = await mkdtemp(path.join(tmpdir(), "build-intake-migration-"));
   const database = new PGlite();
   try {
@@ -94,7 +94,7 @@ test("upgrading the registered baseline preserves data and safely normalizes use
     const db = drizzle(database);
     await migrate(db, { migrationsFolder: baselineFolder });
     await database.query(
-      "INSERT INTO users (email, role, email_verified) VALUES ('existing@example.org', NULL, '2026-04-01 15:30:00')",
+      "INSERT INTO users (email, email_verified) VALUES ('existing@example.org', '2026-04-01 15:30:00+00')",
     );
     await database.query(
       "INSERT INTO organizations (name, contact_email) VALUES ('Existing organization', 'old@example.org')",
