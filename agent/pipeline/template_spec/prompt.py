@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Sequence
 from .catalog import TemplateCatalog
 from .intake import PAGE_SLUGS, DesignIntake
 from .intake_mapping import IntakeNotes
+from .validate import FEATURE_SECTIONS, MEMBER_FORM_TYPE
 
 FLAG_FONT_SUBSTITUTED = "font_substituted"
 FLAG_UNSUPPORTED_FEATURE = "unsupported_feature"
@@ -148,7 +149,12 @@ def _catalog_lines(catalog: TemplateCatalog) -> List[str]:
     lines: List[str] = []
     for type_id, blocks in catalog.types.items():
         theme = catalog.theme_of(type_id)
-        label = f"{type_id} [{theme}]" if theme else f"{type_id} [no family; only with the member_application_form feature]"
+        if theme:
+            label = f"{type_id} [{theme}]"
+        elif type_id == MEMBER_FORM_TYPE:
+            label = f"{type_id} [any family; only with the member_application_form feature]"
+        else:
+            label = f"{type_id} [any family]"
         parts = [f"{block_id} ({b.kind}{', optional' if b.optional else ''})" for block_id, b in blocks.items()]
         lines.append(f"- {label}: {', '.join(parts)}")
     return lines
@@ -192,14 +198,14 @@ def render_system_prompt(catalog: TemplateCatalog) -> str:
         *_theme_lines(catalog),
         "Use ONE family for the whole site. Default to bold (high-contrast and energetic); pick another only when the",
         "tone and visual style clearly ask for it (classic = balanced, minimal = quiet and spacious, editorial =",
-        "type-led and story-driven), and say why in assumptions. Use only that family's type ids.",
-        "member-application-form belongs to no family and is used only when",
-        "member_application_form is among the features.",
+        "type-led and story-driven), and say why in assumptions. Use only that family's type ids for the themed",
+        "roles. Sections marked [any family] are base sections with one look everywhere; use them with any family.",
         "",
         "4. Pages: produce exactly the requested pages, no others, with these slugs:",
         *slug_lines,
-        "The home page starts with a hero and has at least three sections. Every other page starts with a hero or a",
-        "programs section. Section ids are <role>-<n> (hero-1, stats-1, programs-2, ...) and unique across the whole site.",
+        "The home page starts with a hero and has at least three sections.",
+        "Every other page starts with that family's page-header, never a hero.",
+        "Section ids are <role>-<n> (hero-1, page-header-1, programs-2, ...) and unique across the whole site.",
         "",
         "5. Colors: tokens.colors.primary is the first brand color given; secondary the second, or a complement if only",
         "one was given; resolve plain-language color names (for example \"warm gold\") to hex and say so in assumptions.",
@@ -210,8 +216,11 @@ def render_system_prompt(catalog: TemplateCatalog) -> str:
         f"6. Fonts: if the intake names fonts outside [{fonts}], use the closest allowed pair (serif-looking headings ->",
         f"Instrument Serif, otherwise Inter) and add a flag with code \"{FLAG_FONT_SUBSTITUTED}\" naming the requested fonts.",
         "",
-        f"7. Features with no section in the catalog get a flag with code \"{FLAG_UNSUPPORTED_FEATURE}\" naming the feature",
-        "and what you did instead (for example a cta-band that links out). Never invent a section type for them.",
+        "7. A requested feature with a section in the catalog MUST get that section, and that section appears only",
+        "when its feature was requested:",
+        *[f"- {feature} -> {type_id}" for feature, type_id in FEATURE_SECTIONS.items()],
+        f"Any other feature gets a flag with code \"{FLAG_UNSUPPORTED_FEATURE}\" naming the feature and what you did",
+        "instead (for example a cta that links out). Never invent a section type for them.",
         "",
         "8. The client's content exclusions are a hard constraint on every choice. Reference sites are inspiration",
         "only; never copy their structure or content.",

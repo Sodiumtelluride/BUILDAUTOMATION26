@@ -110,6 +110,6 @@ def test_member_form_section_needs_form_submissions() -> None:
 
 
 def test_fixture_uses_the_bold_family() -> None:
-    bold = set(load_catalog().themes["bold"].values())
-    types = {s["type"] for p in SPEC["pages"] for s in p["sections"]}
-    assert types <= bold
+    cat = load_catalog()
+    families = {cat.theme_of(s["type"]) for p in SPEC["pages"] for s in p["sections"]}
+    assert families == {"bold", None}, "every themed section is bold; base sections have no family"

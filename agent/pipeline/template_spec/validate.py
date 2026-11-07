@@ -19,6 +19,17 @@ MEMBER_FORM_TYPE = "member-application-form"
 FORM_RECIPE = "form_submissions"
 BODY_FONT = "Inter"
 
+# Intake features the template can render, and the base section that renders each.
+# Features missing here get an unsupported_feature flag instead of a section.
+FEATURE_SECTIONS: Dict[str, str] = {
+    "contact_form": "contact-block",
+    "event_calendar": "event-list",
+    "photo_gallery": "gallery-grid",
+    "newsletter_signup": "newsletter-signup",
+    "member_application_form": MEMBER_FORM_TYPE,
+    "donation_button": "donate",
+}
+
 
 def _path(parts: Sequence[Any]) -> str:
     out = ""

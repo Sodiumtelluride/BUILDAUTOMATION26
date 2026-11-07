@@ -70,6 +70,35 @@
         "kind": "cta"
       }
     },
+    "page-header-classic": {
+      "page_header.title": {
+        "kind": "headline"
+      },
+      "page_header.subhead": {
+        "kind": "subhead",
+        "optional": true
+      },
+      "page_header.cta": {
+        "kind": "cta",
+        "optional": true
+      }
+    },
+    "story-classic": {
+      "story.headline": {
+        "kind": "headline"
+      },
+      "story.body": {
+        "kind": "body"
+      },
+      "story.image": {
+        "kind": "image",
+        "optional": true
+      },
+      "story.cta": {
+        "kind": "cta",
+        "optional": true
+      }
+    },
     "hero-minimal": {
       "hero.eyebrow": {
         "kind": "label",
@@ -144,6 +173,35 @@
         "kind": "cta"
       }
     },
+    "page-header-minimal": {
+      "page_header.title": {
+        "kind": "headline"
+      },
+      "page_header.subhead": {
+        "kind": "subhead",
+        "optional": true
+      },
+      "page_header.cta": {
+        "kind": "cta",
+        "optional": true
+      }
+    },
+    "story-minimal": {
+      "story.headline": {
+        "kind": "headline"
+      },
+      "story.body": {
+        "kind": "body"
+      },
+      "story.image": {
+        "kind": "image",
+        "optional": true
+      },
+      "story.cta": {
+        "kind": "cta",
+        "optional": true
+      }
+    },
     "hero-editorial": {
       "hero.eyebrow": {
         "kind": "label",
@@ -216,6 +274,35 @@
       },
       "cta.button": {
         "kind": "cta"
+      }
+    },
+    "page-header-editorial": {
+      "page_header.title": {
+        "kind": "headline"
+      },
+      "page_header.subhead": {
+        "kind": "subhead",
+        "optional": true
+      },
+      "page_header.cta": {
+        "kind": "cta",
+        "optional": true
+      }
+    },
+    "story-editorial": {
+      "story.headline": {
+        "kind": "headline"
+      },
+      "story.body": {
+        "kind": "body"
+      },
+      "story.image": {
+        "kind": "image",
+        "optional": true
+      },
+      "story.cta": {
+        "kind": "cta",
+        "optional": true
       }
     },
     "hero-bold": {
@@ -300,6 +387,71 @@
         "kind": "cta"
       }
     },
+    "page-header-bold": {
+      "page_header.title": {
+        "kind": "headline"
+      },
+      "page_header.subhead": {
+        "kind": "subhead",
+        "optional": true
+      },
+      "page_header.cta": {
+        "kind": "cta",
+        "optional": true
+      }
+    },
+    "story-bold": {
+      "story.headline": {
+        "kind": "headline"
+      },
+      "story.body": {
+        "kind": "body"
+      },
+      "story.image": {
+        "kind": "image",
+        "optional": true
+      },
+      "story.cta": {
+        "kind": "cta",
+        "optional": true
+      }
+    },
+    "faq-accordion": {
+      "faq.headline": {
+        "kind": "headline"
+      },
+      "faq.subhead": {
+        "kind": "subhead",
+        "optional": true
+      },
+      "faq.items": {
+        "kind": "items"
+      }
+    },
+    "gallery-grid": {
+      "gallery.headline": {
+        "kind": "headline",
+        "optional": true
+      },
+      "gallery.items": {
+        "kind": "items"
+      }
+    },
+    "donate": {
+      "donate.headline": {
+        "kind": "headline"
+      },
+      "donate.body": {
+        "kind": "body"
+      },
+      "donate.cta": {
+        "kind": "cta"
+      },
+      "donate.items": {
+        "kind": "items",
+        "optional": true
+      }
+    },
     "member-application-form": {
       "form.headline": {
         "kind": "headline"
@@ -317,6 +469,54 @@
       "form.error_message": {
         "kind": "body"
       }
+    },
+    "contact-block": {
+      "contact.headline": {
+        "kind": "headline"
+      },
+      "contact.body": {
+        "kind": "body",
+        "optional": true
+      },
+      "contact.email": {
+        "kind": "label"
+      },
+      "contact.phone": {
+        "kind": "label",
+        "optional": true
+      },
+      "contact.address": {
+        "kind": "label",
+        "optional": true
+      },
+      "contact.hours": {
+        "kind": "label",
+        "optional": true
+      }
+    },
+    "event-list": {
+      "events.headline": {
+        "kind": "headline"
+      },
+      "events.subhead": {
+        "kind": "subhead",
+        "optional": true
+      },
+      "events.items": {
+        "kind": "items"
+      }
+    },
+    "newsletter-signup": {
+      "newsletter.headline": {
+        "kind": "headline"
+      },
+      "newsletter.body": {
+        "kind": "body",
+        "optional": true
+      },
+      "newsletter.cta": {
+        "kind": "cta"
+      }
     }
   },
   "themes": {
@@ -325,28 +525,36 @@
       "programs": "programs-grid",
       "stats": "stats-bar",
       "team": "team-grid",
-      "cta": "cta-band"
+      "cta": "cta-band",
+      "story": "story-classic",
+      "page-header": "page-header-classic"
     },
     "minimal": {
       "hero": "hero-minimal",
       "programs": "programs-minimal",
       "stats": "stats-minimal",
       "team": "team-minimal",
-      "cta": "cta-minimal"
+      "cta": "cta-minimal",
+      "story": "story-minimal",
+      "page-header": "page-header-minimal"
     },
     "editorial": {
       "hero": "hero-editorial",
       "programs": "programs-editorial",
       "stats": "stats-editorial",
       "team": "team-editorial",
-      "cta": "cta-editorial"
+      "cta": "cta-editorial",
+      "story": "story-editorial",
+      "page-header": "page-header-editorial"
     },
     "bold": {
       "hero": "hero-bold",
       "programs": "programs-bold",
       "stats": "stats-bold",
       "team": "team-bold",
-      "cta": "cta-bold"
+      "cta": "cta-bold",
+      "story": "story-bold",
+      "page-header": "page-header-bold"
     }
   },
   "fonts": [

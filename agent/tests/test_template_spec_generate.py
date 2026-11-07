@@ -76,9 +76,12 @@ async def test_job_id_is_overwritten_from_the_job() -> None:
 
 
 async def test_missing_flags_are_added_from_the_intake() -> None:
-    intake, notes = _intake()
+    raw = json.loads(json.dumps(RAW))
+    raw["answers"]["features"].append("Social media feed")
+    intake, notes = map_intake_answers(raw["answers"], raw["attachments"])
     unflagged = json.loads(VALID)
     unflagged["flags"] = []
+    unflagged["features"].append("social_media_feed")
 
     async def provider(system: str, user: str) -> str:
         return json.dumps(unflagged)
@@ -86,9 +89,19 @@ async def test_missing_flags_are_added_from_the_intake() -> None:
     result = await generate_design_spec(intake, notes, JOB, provider)
     assert result.spec is not None
     flags = {(f["code"], f["detail"]) for f in result.spec["flags"]}
-    for feature in ("contact_form", "donation_button", "newsletter_signup"):
-        assert any(code == "unsupported_feature" and feature in detail for code, detail in flags), feature
+    assert any(code == "unsupported_feature" and "social_media_feed" in detail for code, detail in flags)
+    assert not any("contact_form" in detail for _, detail in flags), "contact_form has a section now"
     assert any(code == "font_substituted" and "Source Serif 4" in detail for code, detail in flags)
+
+
+async def test_every_mapped_feature_requires_its_section() -> None:
+    raw = json.loads(json.dumps(RAW))
+    raw["answers"]["features"] = ["Event calendar"]
+    intake, notes = map_intake_answers(raw["answers"], raw["attachments"])
+    result = await generate_design_spec(intake, notes, JOB, mock_provider(), max_attempts=1)
+    assert result.spec is None
+    assert "features: event_calendar requires a event-list section" in result.issues
+    assert "pages: a contact-block section was added but contact_form was not requested" in result.issues
 
 
 async def test_existing_flags_are_not_duplicated() -> None:

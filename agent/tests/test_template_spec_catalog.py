@@ -10,9 +10,10 @@ import pytest
 from pipeline.template_spec.catalog import TEMPLATE_DIR, load_catalog, load_schema
 
 
-def test_catalog_has_21_types_and_4_themes() -> None:
+def test_catalog_has_35_types_and_4_themes() -> None:
     cat = load_catalog()
-    assert len(cat.types) == 21
+    assert len(cat.types) == 35
+    assert set(cat.themes["bold"]) == {"hero", "programs", "stats", "team", "cta", "story", "page-header"}
     assert set(cat.themes) == {"classic", "minimal", "editorial", "bold"}
     assert cat.fonts == ("Inter", "Instrument Serif")
 
@@ -24,7 +25,9 @@ def test_required_blocks_for_hero_centered() -> None:
 def test_theme_of() -> None:
     cat = load_catalog()
     assert cat.theme_of("cta-bold") == "bold"
+    assert cat.theme_of("story-bold") == "bold"
     assert cat.theme_of("member-application-form") is None
+    assert cat.theme_of("event-list") is None
 
 
 def test_schema_requires_assumptions() -> None:

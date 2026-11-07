@@ -17,7 +17,7 @@ from .intake import PAGE_SLUGS, DesignIntake
 from .intake_mapping import IntakeNotes
 from .prompt import FLAG_FONT_SUBSTITUTED, FLAG_UNSUPPORTED_FEATURE, render_system_prompt, render_user_message
 from .provider import SpecProvider
-from .validate import MEMBER_FORM_TYPE, validate_template_spec
+from .validate import FEATURE_SECTIONS, validate_template_spec
 
 
 @dataclass
@@ -46,9 +46,6 @@ def requested_slugs(intake: DesignIntake) -> List[str]:
     return [PAGE_SLUGS[name] for name in intake.pages]
 
 
-MEMBER_FORM_FEATURE = "member_application_form"
-
-
 def reconcile_flags(spec: Dict[str, Any], intake: DesignIntake, catalog: TemplateCatalog) -> List[str]:
     """Make the owner's "flag, don't drop" rule deterministic.
 
@@ -63,9 +60,8 @@ def reconcile_flags(spec: Dict[str, Any], intake: DesignIntake, catalog: Templat
     def has_flag(code: str, needle: str) -> bool:
         return any(f["code"] == code and needle in f["detail"] for f in flags)
 
-    renderable = {MEMBER_FORM_FEATURE}
     for feature in intake.features:
-        if feature not in renderable and not has_flag(FLAG_UNSUPPORTED_FEATURE, feature):
+        if feature not in FEATURE_SECTIONS and not has_flag(FLAG_UNSUPPORTED_FEATURE, feature):
             flags.append({"code": FLAG_UNSUPPORTED_FEATURE, "detail": f"{feature} has no section in the template catalog"})
     unbundled = [font for font in intake.brand_fonts if font not in catalog.fonts]
     if unbundled and not any(f["code"] == FLAG_FONT_SUBSTITUTED for f in flags):
@@ -77,13 +73,15 @@ def reconcile_flags(spec: Dict[str, Any], intake: DesignIntake, catalog: Templat
             }
         )
 
-    has_form_section = any(s["type"] == MEMBER_FORM_TYPE for p in spec["pages"] for s in p["sections"])
-    wants_form = MEMBER_FORM_FEATURE in intake.features
-    if wants_form and not has_form_section:
-        return [f"features: {MEMBER_FORM_FEATURE} requires a {MEMBER_FORM_TYPE} section"]
-    if has_form_section and not wants_form:
-        return [f"pages: a {MEMBER_FORM_TYPE} section was added but {MEMBER_FORM_FEATURE} was not requested"]
-    return []
+    present = {s["type"] for p in spec["pages"] for s in p["sections"]}
+    issues: List[str] = []
+    for name, type_id in FEATURE_SECTIONS.items():
+        wanted, has = name in intake.features, type_id in present
+        if wanted and not has:
+            issues.append(f"features: {name} requires a {type_id} section")
+        if has and not wanted:
+            issues.append(f"pages: a {type_id} section was added but {name} was not requested")
+    return issues
 
 
 async def generate_design_spec(

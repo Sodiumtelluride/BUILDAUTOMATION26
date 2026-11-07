@@ -68,3 +68,18 @@ def test_system_prompt_defaults_to_the_bold_family() -> None:
     assert "Default to bold" in text
     example_types = {s["type"] for p in json.loads(EXAMPLE_SPEC)["pages"] for s in p["sections"]}
     assert example_types and example_types <= set(cat.themes["bold"].values())
+
+
+def test_system_prompt_offers_base_sections_to_every_family_and_maps_features() -> None:
+    text = render_system_prompt(load_catalog())
+    assert "- event-list [any family]:" in text
+    assert "- member-application-form [any family; only with the member_application_form feature]:" in text
+    assert "event_calendar -> event-list" in text
+    assert "newsletter_signup -> newsletter-signup" in text
+    assert "contact_form -> contact-block" in text
+    assert "social_media_feed" not in text.split("7. ")[1].split("8. ")[0]
+
+
+def test_system_prompt_puts_a_page_header_on_every_non_home_page() -> None:
+    text = render_system_prompt(load_catalog())
+    assert "Every other page starts with that family's page-header, never a hero" in text
