@@ -1,7 +1,7 @@
 import { desc } from "drizzle-orm"
 import { redirect } from "next/navigation"
 import { auth } from "@/src/auth"
-import { db } from "@/src/db"
+import { getDb } from "@/src/db"
 import { projectMetrics } from "@/src/db/schema/project-metrics"
 import { CARD, StatusPill } from "@/src/components/dashboard-panels"
 import { STAGE_NAMES } from "@/src/lib/dashboard-data"
@@ -13,7 +13,7 @@ export default async function FactoryPage() {
   const session = await auth()
   if (!session?.user || !CLUB_ROLES.includes(session.user.role)) redirect("/login")
 
-  const projects = await db.select().from(projectMetrics).orderBy(desc(projectMetrics.updatedAt))
+  const projects = await getDb().select().from(projectMetrics).orderBy(desc(projectMetrics.updatedAt))
 
   return (
     <main className="space-y-6 p-6 md:p-10">

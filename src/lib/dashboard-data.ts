@@ -1,5 +1,5 @@
 import { count, countDistinct, desc, eq, gte, inArray, notInArray, sql, sum } from "drizzle-orm"
-import { db } from "@/src/db"
+import { getDb } from "@/src/db"
 import { costLogs, deployments, intakeJobs, jobStages, organizations, pipelineStageEnum, reviewerActions, users } from "@/src/db/schema"
 import { projectMetrics } from "@/src/db/schema/project-metrics"
 import type { ChartPoint } from "@/src/components/area-chart"
@@ -28,7 +28,7 @@ export async function projectsPerDay(): Promise<ChartPoint[]> {
   start.setHours(0, 0, 0, 0)
   start.setDate(start.getDate() - 6)
 
-  const jobs = await db.select({ createdAt: intakeJobs.createdAt }).from(intakeJobs).where(gte(intakeJobs.createdAt, start))
+  const jobs = await getDb().select({ createdAt: intakeJobs.createdAt }).from(intakeJobs).where(gte(intakeJobs.createdAt, start))
 
   return Array.from({ length: 7 }, (_, i) => {
     const day = new Date(start)
@@ -48,8 +48,8 @@ export async function getStats() {
   monthStart.setHours(0, 0, 0, 0)
 
   const [byStatus, [spend]] = await Promise.all([
-    db.select({ status: intakeJobs.status, jobs: count() }).from(intakeJobs).groupBy(intakeJobs.status),
-    db
+    getDb().select({ status: intakeJobs.status, jobs: count() }).from(intakeJobs).groupBy(intakeJobs.status),
+    getDb()
       .select({ total: sum(costLogs.estimatedCost), projects: countDistinct(costLogs.jobId) })
       .from(costLogs)
       .where(gte(costLogs.createdAt, monthStart)),
@@ -71,7 +71,7 @@ export async function getStats() {
 
 /** How many unfinished projects are at each agent stage right now, in pipeline order. */
 export async function getPipeline() {
-  const jobs = await db
+  const jobs = await getDb()
     .select({ stage: projectMetrics.currentStage })
     .from(projectMetrics)
     .where(notInArray(projectMetrics.status, ["deployed", "failed"]))
@@ -85,8 +85,8 @@ export async function getPipeline() {
 /** The latest events across the app, newest first: nonprofits added, agents finishing or failing, reviews, and launches. */
 export async function getRecentActivity(limit = 6): Promise<Activity[]> {
   const [orgs, stages, reviews, launches] = await Promise.all([
-    db.select({ name: organizations.name, at: organizations.createdAt }).from(organizations).orderBy(desc(organizations.createdAt)).limit(limit),
-    db
+    getDb().select({ name: organizations.name, at: organizations.createdAt }).from(organizations).orderBy(desc(organizations.createdAt)).limit(limit),
+    getDb()
       .select({
         org: organizations.name,
         stage: jobStages.stage,
@@ -101,7 +101,7 @@ export async function getRecentActivity(limit = 6): Promise<Activity[]> {
       .where(inArray(jobStages.status, ["completed", "failed"]))
       .orderBy(desc(sql`coalesce(${jobStages.completedAt}, ${jobStages.startedAt})`))
       .limit(limit),
-    db
+    getDb()
       .select({ name: users.name, email: users.email, org: organizations.name, action: reviewerActions.action, at: reviewerActions.createdAt })
       .from(reviewerActions)
       .innerJoin(users, eq(reviewerActions.reviewerId, users.id))
@@ -109,7 +109,7 @@ export async function getRecentActivity(limit = 6): Promise<Activity[]> {
       .innerJoin(organizations, eq(intakeJobs.orgId, organizations.id))
       .orderBy(desc(reviewerActions.createdAt))
       .limit(limit),
-    db
+    getDb()
       .select({ org: organizations.name, at: deployments.deployedAt })
       .from(deployments)
       .innerJoin(intakeJobs, eq(deployments.jobId, intakeJobs.id))
