@@ -18,11 +18,6 @@ it:
 npm run db:generate
 ```
 
-The first migration creates the core tables. The next migration completes the
-auth and intake tables and aligns the `users` columns with the current schema.
-The old unregistered drafts are archived in `legacy/` and must not be applied.
-
-The `users.email_verified` timestamp conversion interprets historical timestamp
-values as UTC so the result does not depend on the migrating session's timezone.
-Existing users with a null role receive the default `member` role before the
-not-null constraint is added.
+The first migration creates every table, including the auth and intake tables.
+The next two lock the schema down and add project metrics. The old unregistered
+drafts are archived in `legacy/` and must not be applied.

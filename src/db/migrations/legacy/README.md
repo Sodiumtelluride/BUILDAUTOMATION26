@@ -8,6 +8,11 @@ These files were present in the repository but were never registered in
 - `0001_classy_diamondback.sql` only adds a password column; its snapshot descends
   from an unrelated, missing snapshot and omits the application's other tables.
 - `0001_intake_submissions.sql` describes a different, incompatible intake schema.
+- `0001_complete_intake_auth.sql` was written against an older baseline and
+  re-creates the auth and intake tables that `0000_init` already creates, so it
+  fails on any database built from the registered chain. It was registered in the
+  journal by mistake and never applied anywhere; removed from the journal on
+  2026-11-07.
 
 They are retained here for history. The registered migrations in the parent
 directory are the supported migration path from an empty database or a database
