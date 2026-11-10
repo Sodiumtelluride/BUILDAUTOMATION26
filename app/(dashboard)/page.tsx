@@ -5,7 +5,11 @@ export default function Home() {
   return (
     <main className="min-h-dvh bg-black px-6 py-8 text-white sm:px-10">
       <div className="mx-auto max-w-5xl">
-        <header className="border-b border-white/15 pb-6 text-xl font-black tracking-tight">BUILD<span className="text-[#FF7A6E]">.</span></header>
+        <header className="flex items-center justify-between gap-4 border-b border-white/15 pb-6">
+          <span className="text-xl font-black tracking-tight">BUILD<span className="text-[#FF7A6E]">.</span></span>
+          {/* For BUILD members: goes to the admin console sign-in */}
+          <Link href="/login" className="rounded-full border border-white/20 px-4 py-1.5 text-sm font-medium text-gray-300 transition-colors hover:border-white/40 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Access Admin Console</Link>
+        </header>
         <div className="max-w-2xl py-16 sm:py-24">
           <p className="mb-5 text-sm font-semibold uppercase tracking-widest text-[#FF7A6E]">BUILD UMass · Website projects</p>
           <h1 className="text-5xl font-black leading-tight tracking-tight sm:text-7xl">Your next website starts here.</h1>

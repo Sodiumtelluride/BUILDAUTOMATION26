@@ -10,6 +10,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // Credentials users are queried in authorize; JWT sessions need no adapter.
   // Credentials provider requires JWT strategy; database strategy doesn't support it
   session: { strategy: "jwt" },
+  // Send signed-out users to our own sign-in page instead of Auth.js's built-in one
+  pages: { signIn: "/login" },
   providers: [
     Credentials({
       credentials: {
