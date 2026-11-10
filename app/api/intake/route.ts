@@ -8,6 +8,7 @@ import { intakeSubmissions } from "@/src/db/schema/intake-submissions"
 import { assets } from "@/src/db/schema/assets"
 import { IntakeRequestError, parseIntakeRequest } from "@/src/lib/intake/request"
 import { rollbackIntakeUploads, uploadIntakeFiles, UploadStorageError, UploadValidationError, type UploadedIntakeFile } from "@/src/lib/intake/uploads"
+import { scheduleIntakeConfirmation } from "@/src/lib/email/schedule"
 
 export const runtime = "nodejs"
 
@@ -134,6 +135,25 @@ export async function POST(req: NextRequest) {
         job,
       }
     })
+
+    // The submission is saved at this point. Email runs after the response and
+    // can never turn this success into an error (decision record, Decision 2).
+    try {
+      scheduleIntakeConfirmation({
+        submissionId: result.submission.id,
+        referenceNo: result.submission.referenceNo,
+        to: data.clientEmail,
+        contactName: data.clientName,
+        answers: data.answers,
+        projectName: data.projectName,
+        files: {
+          logo: uploaded.find((file) => file.category === "logo")?.originalName ?? null,
+          content: uploaded.filter((file) => file.category === "content").map((file) => file.originalName),
+        },
+      })
+    } catch (emailError) {
+      console.error("[POST /api/intake] Could not schedule confirmation email:", emailError)
+    }
 
     return NextResponse.json(
       {
