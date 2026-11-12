@@ -12,6 +12,7 @@ before deployment.
 | `pipeline/contracts.py` | Per-stage input/output contracts and readiness checks |
 | `pipeline/config.py` | Per-node model/retry/budget config, env-overridable |
 | `pipeline/nodes/` | One module per stage node (not yet implemented) |
+| `pipeline/template_spec/` | Intake answers → Claude prompt → `design-spec.json` in the site template's contract (mock provider by default) |
 | `tests/fixtures/` | Realistic JSON snapshots for unit testing |
 | `pyproject.toml` | Python project metadata and dependencies |
 
@@ -172,6 +173,75 @@ ready, missing = STAGE_CONTRACTS[StageEnum.SEO].is_ready(state)
 print(ready)    # False
 print(missing)  # ['content_output', 'code_generation_output']
 ```
+
+## Intake to design-spec.json (demo flow)
+
+Turns a stored intake (the `{version, answers, attachments, jobId}` blob the intake API writes) into the
+`design-spec.json` that `../BUILD_TEMPLATE_REPO` builds a site from. The contract (JSON Schema and section
+catalog) is vendored from the template under `pipeline/template_spec/template/`; `pytest` checks it is in sync
+when `BUILD_TEMPLATE_REPO` points at a checkout.
+
+```bash
+# 1. Generate a spec. The default provider is a mock that replies with tests/fixtures/template_design_spec_valid.json.
+python -m pipeline.template_spec.cli --answers tests/fixtures/intake_answers_complete.json --out /tmp/design-spec.json
+
+# 2. Build the site from it (scaffold placeholder content, apply tokens, lint, typecheck, build).
+scripts/build_site_from_spec.sh /tmp/design-spec.json            # template dir defaults to ../BUILD_TEMPLATE_REPO
+
+# Manual path: write the prompt, paste system.md then user.md into Claude Code, save its reply, then validate it.
+python -m pipeline.template_spec.cli --answers tests/fixtures/intake_answers_complete.json --print-prompt /tmp/prompt
+python -m pipeline.template_spec.cli --answers tests/fixtures/intake_answers_complete.json --validate /tmp/claude-spec.json
+```
+
+`--provider anthropic` calls the Messages API through `langchain_anthropic` with the DESIGN node's model
+(`ANTHROPIC_API_KEY` from Doppler). It is wired but not yet exercised end-to-end.
+
+### Rerunning the full demo from a stored intake
+
+Run from `agent/` with the venv active. Steps 1 and 2 are the real pipeline; 3 and 5 stand in for the DESIGN and
+CONTENT/SEO agents until those nodes exist.
+
+```bash
+# 1. Pull the intake blob out of Postgres (DATABASE_URL is in the web app's .env.local; the id is the
+#    intake_submissions row the form created, printed by POST /api/intake as "id").
+(set -a; . ../.env.local; set +a; psql "$DATABASE_URL" -At \
+  -c "select notes from intake_submissions where id = '<submission uuid>'") > /tmp/intake.json
+
+# 2. Render the prompt for that intake.
+python -m pipeline.template_spec.cli --answers /tmp/intake.json --print-prompt /tmp/prompt
+
+# 3. Play the DESIGN agent: in Claude Code, "Read /tmp/prompt/system.md and /tmp/prompt/user.md and write only
+#    the JSON to /tmp/claude-spec.json". Then check it the way the API path would.
+python -m pipeline.template_spec.cli --answers /tmp/intake.json --validate /tmp/claude-spec.json
+
+# 4. Drop the spec into the template: deletes the old content, scaffolds placeholders, applies tokens, builds.
+scripts/build_site_from_spec.sh /tmp/claude-spec.json          # template dir defaults to ../BUILD_TEMPLATE_REPO
+
+# 5. Play the CONTENT and SEO agents: replace every "[PLACEHOLDER] ..." value in
+#    BUILD_TEMPLATE_REPO/content/content.json and content/seo.json with real copy (value shapes are in the
+#    template's AGENTS.md section 2; event-list item bodies are "<date> · <place>\n<description>"), then
+(cd ../../BUILD_TEMPLATE_REPO && npm run build && npm run dev)
+```
+
+Only the content step needs to be repeated after a restyle: if the template changes how a section looks but
+not the catalog, the spec and content stay valid and `npm run build` is enough.
+
+### When the template's catalog changes
+
+Adding a section type, a theme role or a block id changes the contract the agent is vendoring, so:
+
+```bash
+(cd ../../BUILD_TEMPLATE_REPO && npm run catalog:export && npm run schema:export)
+cp ../../BUILD_TEMPLATE_REPO/lib/spec/{section-catalog.json,design-spec.schema.json} pipeline/template_spec/template/
+BUILD_TEMPLATE_REPO=../../BUILD_TEMPLATE_REPO pytest      # the sync test must pass
+```
+
+Then update the type count in `tests/test_template_spec_catalog.py`, and if the new section renders an intake
+feature, add the pair to `FEATURE_SECTIONS` in `pipeline/template_spec/validate.py` (the prompt's rule 7 and the
+flag reconciliation both read it). Any layout rule the template adds (for example "non-home pages start with a
+page-header") goes into the numbered rules in `pipeline/template_spec/prompt.py` with a test. Finally regenerate
+the spec (step 3 above); existing content for unchanged section ids survives `content:scaffold`, only new blocks
+come back as placeholders.
 
 ## Setup
 

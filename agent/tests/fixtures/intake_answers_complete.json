@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "organizationId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+  "jobId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "answers": {
+    "sensitiveDataAcknowledged": true,
+    "organizationName": "Pioneer Valley Food Bank",
+    "primaryContactName": "Maria Santos",
+    "primaryContactEmail": "maria@pvfoodbank.org",
+    "organizationType": "Nonprofit",
+    "primaryGoal": "Accept donations",
+    "organizationDescription": "We eliminate food insecurity in Western Massachusetts through community partnerships, mobile pantries, and direct food distribution across Hampden and Hampshire counties.",
+    "targetAudience": "Families and individuals experiencing food insecurity, plus local donors and volunteers.",
+    "pages": ["Home", "About", "Team", "Donate", "Contact", "FAQ"],
+    "features": ["Contact form", "Donation button", "Newsletter signup"],
+    "featureDetails": "",
+    "hasLogo": "Yes — I will upload it",
+    "brandColors": "#2E7D32 and #FFA000 (forest green and warm amber)",
+    "brandFonts": "Source Serif 4 and Inter",
+    "visualStyle": "Warm and welcoming with rounded corners, generous whitespace, and photography of real people.",
+    "referenceWebsites": ["https://feedingamerica.org", "https://foodbankwma.org"],
+    "hasContent": "No — please generate it from my description",
+    "existingContent": "",
+    "toneAndVoice": ["Friendly", "Inspiring", "Professional"],
+    "contentRestrictions": "Never mention political parties or make promises of guaranteed aid.",
+    "hasDomain": "No — a BUILD subdomain is fine for now",
+    "domainName": "",
+    "integrations": ["Stripe", "Google Analytics", "Mailchimp"],
+    "integrationDetails": "",
+    "additionalInfo": ""
+  },
+  "attachments": [
+    {
+      "category": "logo",
+      "originalName": "logo_green.svg",
+      "size": 2048,
+      "contentType": "image/svg+xml",
+      "bucket": "intake-uploads",
+      "path": "intake/a1b2c3d4-e5f6-7890-abcd-ef1234567890/logo/0f1e2d3c.svg"
+    },
+    {
+      "category": "content",
+      "originalName": "annual_report.pdf",
+      "size": 40960,
+      "contentType": "application/pdf",
+      "bucket": "intake-uploads",
+      "path": "intake/a1b2c3d4-e5f6-7890-abcd-ef1234567890/content/9a8b7c6d.pdf"
+    }
+  ]
+}

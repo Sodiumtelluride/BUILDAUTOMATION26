@@ -19,8 +19,8 @@ npm run db:generate
 ```
 
 The baseline migration (`0000_init`) creates the core, auth and intake tables.
-Later migrations are layered on top of it. The old unregistered drafts are
-archived in `legacy/` and must not be applied.
+The next two lock the schema down and add project metrics. The old unregistered
+drafts are archived in `legacy/` and must not be applied.
 
 Every migration must have a unique `idx` in `meta/_journal.json`, with a
 matching `meta/<idx>_snapshot.json`.
