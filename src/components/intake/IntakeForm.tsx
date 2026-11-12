@@ -26,15 +26,8 @@ import {
   type FormErrors,
   type IntakeFormData,
 } from "./validation";
+import { SECTION_TITLES, summarizeIntake } from "@/src/lib/intake/summary";
 
-const SECTION_TITLES = [
-  "Organization & Contact",
-  "Project Goals",
-  "Design & Branding",
-  "Content",
-  "Technical Details",
-  "Review & Submit",
-];
 
 const initialFormData: IntakeFormData = {
   sensitiveDataAcknowledged: false,
@@ -874,48 +867,30 @@ function Section6({ data, set, errors }: SectionProps) {
 const SECTIONS = [Section1, Section2, Section3, Section4, Section5, Section6];
 
 function ReviewAnswers({ data, onEdit }: { data: IntakeFormData; onEdit: (section: number) => void }) {
-  const groups: { title: string; rows: [string, string][] }[] = [
-    { title: SECTION_TITLES[0], rows: [
-      ["Organization", data.organizationName], ["Contact", `${data.primaryContactName} · ${data.primaryContactEmail}`], ["Type", data.organizationType],
-    ] },
-    { title: SECTION_TITLES[1], rows: [
-      ["Goal", data.primaryGoal], ["About", data.organizationDescription], ["Audience", data.targetAudience],
-      ["Pages", data.pages.join(", ")], ["Features", data.features.join(", ")], ["Feature details", data.featureDetails],
-    ] },
-    { title: SECTION_TITLES[2], rows: [
-      ["Logo", data.hasLogo === LOGO_UPLOAD ? data.logoFile?.name ?? "" : data.hasLogo],
-      ["Colors", data.brandColors], ["Fonts", data.brandFonts], ["Style", data.visualStyle], ["References", data.referenceWebsites.filter(Boolean).join(", ")],
-    ] },
-    { title: SECTION_TITLES[3], rows: [
-      ["Content", data.hasContent],
-      ...((data.hasContent === CONTENT_YES || data.hasContent === CONTENT_PARTIAL)
-        ? [["Existing text", data.existingContent], ["Documents", data.contentFiles.map((file) => file.name).join(", ")]] as [string, string][]
-        : []),
-      ["Tone", data.toneAndVoice.join(", ")], ["Avoid", data.contentRestrictions],
-    ] },
-    { title: SECTION_TITLES[4], rows: [
-      ["Domain", data.hasDomain === DOMAIN_OWNED ? data.domainName : data.hasDomain],
-      ["Integrations", data.integrations.join(", ")], ["Integration details", data.integrationDetails],
-    ] },
-  ];
+  // Same grouping as the confirmation email. Additional details (section 6) are
+  // edited on this page, so they are not repeated in the review list.
+  const groups = summarizeIntake(data, {
+    logo: data.logoFile?.name ?? null,
+    content: data.contentFiles.map((file) => file.name),
+  }).filter((group) => group.section < 5);
   return (
     <div className="mt-8 border-t border-white/15 pt-6">
       <h2 className="text-xl font-semibold text-white">Review your project</h2>
       <p className="mt-2 text-sm leading-relaxed text-gray-300">Check your answers before sending them to BUILD. You can edit any section.</p>
       <div className="mt-5 space-y-3">
-        {groups.map((group, index) => (
+        {groups.map((group) => (
           <details key={group.title} className="rounded-xl border border-white/15 bg-black/15">
             <summary className="cursor-pointer px-4 py-4 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-white rounded-xl">{group.title}</summary>
             <div className="px-4 pb-4">
               <dl className="space-y-3">
-                {group.rows.filter(([, value]) => value.trim()).map(([label, value]) => (
+                {group.rows.map(([label, value]) => (
                   <div key={label}>
                     <dt className="text-xs font-medium text-gray-400">{label}</dt>
                     <dd className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-100">{value}</dd>
                   </div>
                 ))}
               </dl>
-              <button type="button" onClick={() => onEdit(index)} className="mt-3 min-h-11 rounded-lg px-3 text-sm font-semibold text-white underline underline-offset-4 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white">Edit {group.title}</button>
+              <button type="button" onClick={() => onEdit(group.section)} className="mt-3 min-h-11 rounded-lg px-3 text-sm font-semibold text-white underline underline-offset-4 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white">Edit {group.title}</button>
             </div>
           </details>
         ))}
@@ -924,7 +899,7 @@ function ReviewAnswers({ data, onEdit }: { data: IntakeFormData; onEdit: (sectio
   );
 }
 
-function SuccessScreen({ referenceNo }: { referenceNo: string }) {
+function SuccessScreen({ referenceNo, email }: { referenceNo: string; email: string }) {
   return (
     <main className="min-h-dvh bg-black flex flex-col items-center justify-center px-6 py-12 text-center">
       <div className="w-20 h-20 rounded-full bg-[#DC4436] flex items-center justify-center mb-8">
@@ -937,7 +912,9 @@ function SuccessScreen({ referenceNo }: { referenceNo: string }) {
       </p>
       <p className="mt-8 text-sm text-gray-400">Your reference number</p>
       <p className="mt-2 rounded-xl border border-white/20 px-5 py-3 font-mono text-lg text-white">{referenceNo}</p>
-      <p className="mt-4 max-w-sm text-sm leading-relaxed text-gray-400">Keep this number for your records. We will contact you at the email address you provided.</p>
+      <p className="mt-4 max-w-sm text-sm leading-relaxed text-gray-400">
+        We&apos;re emailing a copy of your responses to <span className="text-gray-200 break-all">{email}</span>. It can take a few minutes; check your spam folder if you don&apos;t see it. Keep your reference number for your records.
+      </p>
       <Link href="/" className="mt-8 min-h-11 rounded-full px-5 py-3 text-sm font-semibold text-white underline underline-offset-4 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white">Back to BUILD</Link>
     </main>
   );
@@ -1054,7 +1031,7 @@ export function IntakeForm() {
     }
   };
 
-  if (referenceNo) return <SuccessScreen referenceNo={referenceNo} />;
+  if (referenceNo) return <SuccessScreen referenceNo={referenceNo} email={formData.primaryContactEmail} />;
 
   const CurrentSection = SECTIONS[section];
   const isLast = section === SECTION_TITLES.length - 1;

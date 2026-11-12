@@ -24,6 +24,12 @@ register("./helpers/typescript-loader.mjs", import.meta.url, { data: { mocks: {
     }
     export async function rollbackIntakeUploads(files) { globalThis.__intakeRolledBack.push(...files); }
   `),
+  "@/src/lib/email/schedule": moduleUrl(`
+    export function scheduleIntakeConfirmation(job) {
+      if (globalThis.__intakeEmailError) throw globalThis.__intakeEmailError;
+      globalThis.__intakeEmails.push(job);
+    }
+  `),
 } } });
 
 const { POST } = await import("../app/api/intake/route.ts");
@@ -44,6 +50,8 @@ beforeEach(async () => {
   globalThis.__intakeUploadError = null;
   globalThis.__intakeUploadCalls = 0;
   globalThis.__intakeRolledBack = [];
+  globalThis.__intakeEmails = [];
+  globalThis.__intakeEmailError = null;
 });
 
 function jsonRequest(body, method = "POST") {
@@ -159,4 +167,31 @@ test("submission lookup keeps organizations and repeated projects separate when 
   assert.equal(result.organization.name, "Second Organization");
   assert.equal(result.jobs.length, 1);
   assert.equal(result.jobs[0].id, secondData.job.id);
+});
+
+test("a saved submission schedules one confirmation email with the receipt details", async () => {
+  const response = await POST(jsonRequest(intakeAnswers()));
+  assert.equal(response.status, 201);
+  const { data } = await response.json();
+  assert.equal(globalThis.__intakeEmails.length, 1);
+  const [email] = globalThis.__intakeEmails;
+  assert.equal(email.referenceNo, data.submission.referenceNo);
+  assert.equal(email.submissionId, data.submission.id);
+  assert.equal(email.to, "maria@example.org");
+  assert.equal(email.answers.organizationName, "Pioneer Community");
+  assert.deepEqual(email.files, { logo: null, content: [] });
+});
+
+test("an email scheduling failure does not fail a saved submission", async (t) => {
+  t.mock.method(console, "error", () => {});
+  globalThis.__intakeEmailError = new Error("after() unavailable");
+  const response = await POST(jsonRequest(intakeAnswers()));
+  assert.equal(response.status, 201);
+  assert.equal((await database.query("SELECT * FROM intake_submissions")).rows.length, 1);
+});
+
+test("rejected submissions never schedule an email", async () => {
+  const response = await POST(jsonRequest({ projectName: "", clientName: "", clientEmail: "nope" }));
+  assert.equal(response.status, 422);
+  assert.equal(globalThis.__intakeEmails.length, 0);
 });
