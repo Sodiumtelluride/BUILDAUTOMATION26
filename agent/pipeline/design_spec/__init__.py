@@ -35,6 +35,7 @@ from .generation import (
 )
 from .intake import PAGE_SLUGS, DesignIntake, missing_branding, parse_design_intake
 from .issues import IssueCode, ValidationIssue, format_issues_for_repair
+from .logo_palette import LogoPalette, extract_logo_palette
 from .retry import GenerateAttempt, NeedsHumanReview, RunResult, SpecAccepted, generate_validated_spec
 from .revisions import RevisionDiff, compare_revisions
 from .schema import Decision, DesignSpec
@@ -48,6 +49,7 @@ __all__ = [
     "FEATURE_SECTION_TYPES",
     "GenerateAttempt",
     "LayoutPlan",
+    "LogoPalette",
     "PAGE_SLUGS",
     "PlannedPage",
     "PlannedSection",
@@ -69,6 +71,7 @@ __all__ = [
     "content_block_index",
     "current_decisions",
     "decisions_for",
+    "extract_logo_palette",
     "from_config",
     "get_section_def",
     "missing_branding",

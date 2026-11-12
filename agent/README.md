@@ -11,6 +11,7 @@ before deployment.
 | `pipeline/state.py` | Single Pydantic v2 state model shared across all nodes |
 | `pipeline/contracts.py` | Per-stage input/output contracts and readiness checks |
 | `pipeline/config.py` | Per-node model/retry/budget config, env-overridable |
+| `pipeline/design_spec/logo_palette.py` | D8: derives brand colors from an uploaded logo when none were given |
 | `pipeline/nodes/` | One module per stage node (not yet implemented) |
 | `tests/fixtures/` | Realistic JSON snapshots for unit testing |
 | `pyproject.toml` | Python project metadata and dependencies |
