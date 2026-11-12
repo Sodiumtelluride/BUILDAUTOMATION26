@@ -83,7 +83,7 @@ test("registered migrations create a working intake/auth schema and can be rerun
   }
 });
 
-test("upgrading from the registered baseline preserves existing rows", async () => {
+test("upgrading the registered baseline preserves existing data", async () => {
   const baselineFolder = await mkdtemp(path.join(tmpdir(), "build-intake-migration-"));
   const database = new PGlite();
   try {
@@ -94,16 +94,17 @@ test("upgrading from the registered baseline preserves existing rows", async () 
     const db = drizzle(database);
     await migrate(db, { migrationsFolder: baselineFolder });
     await database.query(
-      "INSERT INTO users (email, role, email_verified) VALUES ('existing@example.org', 'reviewer', '2026-04-01 15:30:00+00')",
+      "INSERT INTO users (email, email_verified) VALUES ('existing@example.org', '2026-04-01 15:30:00+00')",
     );
     await database.query(
       "INSERT INTO organizations (name, contact_email) VALUES ('Existing organization', 'old@example.org')",
     );
+    await database.query("SET TIME ZONE 'America/New_York'");
 
     await migrate(db, { migrationsFolder });
     await verifySchema(database);
     const { rows: [user] } = await database.query("SELECT role, email_verified FROM users");
-    assert.equal(user.role, "reviewer");
+    assert.equal(user.role, "member");
     assert.equal(user.email_verified.toISOString(), "2026-04-01T15:30:00.000Z");
     assert.equal((await database.query("SELECT name FROM organizations")).rows[0].name, "Existing organization");
   } finally {

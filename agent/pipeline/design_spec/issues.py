@@ -1,0 +1,60 @@
+"""
+Structured validation issues: logged as JSON (Pipeline DoD: errors as
+structured JSON, not free text) and fed back to the model on retry.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Iterable, Literal
+
+IssueCode = Literal[
+    # The output isn't the right shape
+    "invalid_json",
+    "schema",
+    # IDs that downstream stages address must be unique and must exist
+    "duplicate_slug",
+    "duplicate_section_id",
+    "duplicate_content_block_id",
+    "flag_reference_missing",
+    # The spec must belong to the job being run
+    "job_id_mismatch",
+    # figma_url and the no_figma flag must agree (D16, PRD §4 Figma link)
+    "figma_state_conflict",
+    # D5 decision log: every part of the spec has a current decision
+    "duplicate_decision_id",
+    "decision_reference_missing",
+    "decision_superseded_twice",
+    "decision_target_missing",
+    "decision_missing",
+    "contrast_fix_unrecorded",
+    # Stable IDs across revisions
+    "job_id_changed",
+    "section_identity_changed",
+    "content_block_identity_changed",
+    "section_id_regenerated",
+    "content_block_id_regenerated",
+    # D5 + Pipeline DoD: the decision log is append-only across revisions
+    "decision_history_changed",
+    # D2: sections, components and content slots come from the approved
+    # BUILD section catalog (catalog.py)
+    "unknown_section_type",
+    "section_components_not_in_catalog",
+    "content_block_catalog_mismatch",
+    "missing_required_content_block",
+    # Every page requested in intake must appear in the page map
+    "missing_requested_page",
+]
+
+
+@dataclass(frozen=True)
+class ValidationIssue:
+    code: IssueCode
+    path: str
+    """Where in the spec, e.g. "pages[0].sections[1].type". "" = top level."""
+    message: str
+
+
+def format_issues_for_repair(issues: Iterable[ValidationIssue]) -> str:
+    """Turn issues into a short list the model can act on during a retry."""
+    return "\n".join(f"- [{i.code}] {i.path or '(root)'}: {i.message}" for i in issues)
