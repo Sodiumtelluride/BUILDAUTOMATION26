@@ -11,7 +11,8 @@ before deployment.
 | `pipeline/state.py` | Single Pydantic v2 state model shared across all nodes |
 | `pipeline/contracts.py` | Per-stage input/output contracts and readiness checks |
 | `pipeline/config.py` | Per-node model/retry/budget config, env-overridable |
-| `pipeline/nodes/` | One module per stage node (`design.py` is implemented; the rest are not yet) |
+| `pipeline/nodes/` | One module per stage node (`intake.py`, `design.py` and `code_generation.py` are implemented) |
+| `pipeline/graph.py`, `pipeline/run.py` | The demo-site graph and its one-shot entrypoint (see "One-click demo site") |
 | `pipeline/template_spec/` | Intake answers → Claude prompt → `design-spec.json` in the site template's contract. Used by the DESIGN node and the CLI (mock provider by default) |
 | `tests/fixtures/` | Realistic JSON snapshots for unit testing |
 | `pyproject.toml` | Python project metadata and dependencies |
@@ -197,8 +198,10 @@ python -m pipeline.template_spec.cli --answers tests/fixtures/intake_answers_com
   --validate /tmp/claude-reply.json --out /tmp/claude-spec.json
 ```
 
-`--provider anthropic` calls the Messages API through `langchain_anthropic` with the DESIGN node's model
-(`ANTHROPIC_API_KEY` from Doppler). It is wired but not yet exercised end-to-end.
+`--provider ollama` calls a local model through Ollama (JSON mode, temperature 0, 32k context); the model is
+`AGENT_LOCAL_MODEL_ID`, default `qwen2.5:14b-instruct` (`pipeline/config.py`). `--provider anthropic` calls the
+Messages API through `langchain_anthropic` with the DESIGN node's model (`ANTHROPIC_API_KEY` from Doppler). It is
+wired but not yet exercised end-to-end.
 
 ### What the DESIGN node adds around the spec
 
@@ -217,35 +220,47 @@ python -m pipeline.template_spec.cli --answers tests/fixtures/intake_answers_com
   `rule` or `claude` (`template_spec/sources.py`). It is append-only across revisions. It lives only in pipeline
   state for now, so that state has to be stored durably; a table comes when the admin console reads the log.
 
-### Rerunning the full demo from a stored intake
+### One-click demo site (local)
 
-Run from `agent/` with the venv active. Steps 1 and 2 are the real pipeline; 3 and 5 stand in for the DESIGN and
-CONTENT/SEO agents until those nodes exist.
+The graph in `pipeline/graph.py` runs `INTAKE → DESIGN → CODE_GENERATION` unattended:
+
+- **INTAKE** maps the stored blob to `project_spec` (no model call).
+- **DESIGN** asks the model for the spec.
+- **CODE_GENERATION** clones the template's committed HEAD into the job folder, runs `npm ci` and
+  `scripts/build_site_from_spec.sh`, and starts `next start` on a free port.
+
+A `review_flag` (unmappable answers, or no valid spec after the repair round) ends the run early. Advisory spec
+flags such as `logo_unreadable` do not: the site still builds.
+
+**From the admin console.** Set these where the console runs (in `.env.local` on the demo laptop):
 
 ```bash
-# 1. Pull the intake blob out of Postgres (DATABASE_URL is in the web app's .env.local; the id is the
-#    intake_submissions row the form created, printed by POST /api/intake as "id").
-(set -a; . ../.env.local; set +a; psql "$DATABASE_URL" -At \
-  -c "select notes from intake_submissions where id = '<submission uuid>'") > /tmp/intake.json
-
-# 2. Render the prompt for that intake.
-python -m pipeline.template_spec.cli --answers /tmp/intake.json --print-prompt /tmp/prompt
-
-# 3. Play the DESIGN agent: in Claude Code, "Read /tmp/prompt/system.md and /tmp/prompt/user.md and write only
-#    the JSON to /tmp/claude-reply.json". Then check it the way the API path would and write the final spec.
-python -m pipeline.template_spec.cli --answers /tmp/intake.json --validate /tmp/claude-reply.json --out /tmp/claude-spec.json
-
-# 4. Drop the spec into the template: deletes the old content, scaffolds placeholders, applies tokens, builds.
-scripts/build_site_from_spec.sh /tmp/claude-spec.json          # template dir defaults to ../BUILD_TEMPLATE_REPO
-
-# 5. Play the CONTENT and SEO agents: replace every "[PLACEHOLDER] ..." value in
-#    BUILD_TEMPLATE_REPO/content/content.json and content/seo.json with real copy (value shapes are in the
-#    template's AGENTS.md section 2; event-list item bodies are "<date> · <place>\n<description>"), then
-(cd ../../BUILD_TEMPLATE_REPO && npm run build && npm run dev)
+DEMO_SITES_DIR=/Users/<you>/build-demo-sites   # turns the button on; one folder per intake
+# optional:
+AGENT_PROVIDER=ollama                          # or anthropic, or mock
+AGENT_LOCAL_MODEL_ID=qwen2.5:32b-instruct      # the local model
+AGENT_PYTHON=/path/to/python                   # default: agent/.venv/bin/python
+BUILD_TEMPLATE_SOURCE=/path/or/git/url         # default: ../BUILD_TEMPLATE_REPO (committed HEAD only)
 ```
 
-Only the content step needs to be repeated after a restyle: if the template changes how a section looks but
-not the catalog, the spec and content stay valid and `npm run build` is enough.
+Open an intake under `/intakes` and press **Generate demo site** at the bottom. The run is detached from the
+console: reload the page to see it finish. The row's `demo_url`, `demo_status` and `demo_error` are filled from the
+job folder's `result.json` on the next page load, so restarting `next dev` mid-run is safe. The agent gets only
+`PATH`, `HOME` and `AGENT_*`/`OLLAMA_*`/`BUILD_TEMPLATE_SOURCE`, never the console's `DATABASE_URL` or secrets.
+
+**From the shell**, with the same job-folder layout:
+
+```bash
+python -m pipeline.run --job-dir /tmp/demo-job --provider mock < tests/fixtures/intake_answers_complete.json
+```
+
+The job folder holds `intake.json`, `design-spec.json`, `site/`, `build.log`, `server.log`, `run.log`, `state.json`
+(final pipeline state with the source log) and `result.json`. Generating again for the same intake stops its
+previous server. Demo URLs stop working when the laptop restarts; generate again to bring one back.
+
+Page copy is still the template's `[PLACEHOLDER]` scaffold until a CONTENT node exists. To fill it by hand, edit
+`site/content/content.json` and `site/content/seo.json` in the job folder (value shapes are in the template's
+AGENTS.md section 2), then rebuild there.
 
 ### When the template's catalog changes
 
@@ -260,8 +275,8 @@ BUILD_TEMPLATE_REPO=../../BUILD_TEMPLATE_REPO pytest      # the sync test must p
 Then update the type count in `tests/test_template_spec_catalog.py`, and if the new section renders an intake
 feature, add the pair to `FEATURE_SECTIONS` in `pipeline/template_spec/validate.py` (the prompt's rule 7 and the
 flag reconciliation both read it). Any layout rule the template adds (for example "non-home pages start with a
-page-header") goes into the numbered rules in `pipeline/template_spec/prompt.py` with a test. Finally regenerate
-the spec (step 3 above); existing content for unchanged section ids survives `content:scaffold`, only new blocks
+page-header") goes into the numbered rules in `pipeline/template_spec/prompt.py` with a test. Finally generate
+the demo again; existing content for unchanged section ids survives `content:scaffold`, only new blocks
 come back as placeholders.
 
 ## Setup

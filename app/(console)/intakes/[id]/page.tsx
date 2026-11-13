@@ -2,7 +2,9 @@ import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 import { auth } from "@/src/auth"
 import { CARD, NoAccess, StatusPill } from "@/src/components/dashboard-panels"
+import { demoSitesDir, settleDemo, type DemoFields } from "@/src/lib/demo-site"
 import { answerGroups, getIntake, REVIEW_ROLES } from "@/src/lib/intake-data"
+import { generateDemoSite } from "./actions"
 
 /** A titled card of label/value rows; empty answers show as "—". */
 function AnswerCard({ title, rows }: { title: string; rows: [string, string | null | undefined][] }) {
@@ -28,8 +30,9 @@ export default async function IntakeDetailPage({ params }: { params: Promise<{ i
   if (!REVIEW_ROLES.includes(session.user.role)) return <NoAccess message="Only admins and reviewers can view intake forms." />
 
   const { id } = await params
-  const intake = await getIntake(id)
-  if (!intake) notFound()
+  const found = await getIntake(id)
+  if (!found) notFound()
+  const intake = await settleDemo(found)
 
   const answers = intake.details?.answers
   const attachments = intake.details?.attachments ?? []
@@ -98,6 +101,51 @@ export default async function IntakeDetailPage({ params }: { params: Promise<{ i
           </pre>
         </details>
       )}
+      <DemoSiteCard intake={intake} enabled={demoSitesDir() !== null} />
     </main>
+  )
+}
+
+/** The local demo build: status, link or error, and the button that starts a run. */
+function DemoSiteCard({ intake, enabled }: { intake: DemoFields & { id: string }; enabled: boolean }) {
+  if (!enabled && !intake.demoStatus) return null
+  const running = intake.demoStatus === "running"
+  return (
+    <section className={CARD}>
+      <div className="flex flex-wrap items-center gap-3">
+        <h2 className="font-semibold">Demo site</h2>
+        {intake.demoStatus && <StatusPill status={intake.demoStatus} />}
+      </div>
+      <div className="mt-3 space-y-2 text-sm">
+        {running && (
+          <p className="text-zinc-400">
+            Building since {intake.demoStartedAt?.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) ?? "just now"}.
+            This takes several minutes; reload the page to check.
+          </p>
+        )}
+        {intake.demoStatus === "succeeded" && intake.demoUrl && (
+          <a href={intake.demoUrl} target="_blank" rel="noreferrer" className="font-medium text-zinc-100 underline underline-offset-4">
+            {intake.demoUrl}
+          </a>
+        )}
+        {intake.demoStatus === "failed" && intake.demoError && (
+          <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg bg-black/40 p-3 text-xs text-zinc-300">{intake.demoError}</pre>
+        )}
+        {!intake.demoStatus && <p className="text-zinc-400">Build a demo of this site from the answers above. It runs on this machine.</p>}
+      </div>
+      {enabled ? (
+        <form action={generateDemoSite.bind(null, intake.id)} className="mt-4">
+          <button
+            type="submit"
+            disabled={running}
+            className="min-h-11 rounded-lg bg-zinc-100 px-4 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-300 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {running ? "Building…" : intake.demoStatus ? "Regenerate demo site" : "Generate demo site"}
+          </button>
+        </form>
+      ) : (
+        <p className="mt-4 text-xs text-zinc-500">Demo builds run only on the machine with DEMO_SITES_DIR set.</p>
+      )}
+    </section>
   )
 }

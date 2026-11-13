@@ -2,7 +2,7 @@
 Intake answers -> design-spec.json, from the command line.
 
     python -m pipeline.template_spec.cli --answers <stored intake blob> --out design-spec.json
-        [--provider mock|anthropic] [--mock-spec <file>] [--job-id <uuid>]
+        [--provider mock|ollama|anthropic] [--mock-spec <file>] [--job-id <uuid>]
     python -m pipeline.template_spec.cli --answers <blob> --print-prompt <dir>   # system.md + user.md to paste by hand
     python -m pipeline.template_spec.cli --answers <blob> --validate <reply.json> [--out design-spec.json]
         # checks a reply saved by hand; with --out, writes the final spec the template builds from
@@ -24,14 +24,14 @@ from .catalog import load_catalog
 from .generate import finalize_spec, generate_design_spec, parse_spec_text
 from .intake_mapping import map_intake_answers
 from .prompt import render_system_prompt, render_user_message
-from .provider import DEFAULT_MOCK_SPEC, SpecProvider, anthropic_provider, mock_provider
+from .provider import DEFAULT_MOCK_SPEC, SpecProvider, mock_provider, provider_named
 
 
 def _parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="python -m pipeline.template_spec.cli", description=__doc__.split("\n\n")[0])
     p.add_argument("--answers", required=True, help="the stored intake blob: {version, answers, attachments, jobId}")
     p.add_argument("--out", help="where to write design-spec.json")
-    p.add_argument("--provider", choices=["mock", "anthropic"], default="mock")
+    p.add_argument("--provider", choices=["mock", "ollama", "anthropic"], default="mock")
     p.add_argument("--mock-spec", type=Path, default=DEFAULT_MOCK_SPEC, help="file the mock provider replies with")
     p.add_argument("--job-id", type=uuid.UUID, help="defaults to the blob's jobId, else a new uuid4")
     p.add_argument("--print-prompt", metavar="DIR", help="write system.md and user.md here and exit")
@@ -84,7 +84,7 @@ def main(argv: Sequence[str]) -> int:
         return _fail("--out is required unless --print-prompt or --validate is given")
     out = Path(args.out)
 
-    provider: SpecProvider = mock_provider(args.mock_spec) if args.provider == "mock" else anthropic_provider()
+    provider: SpecProvider = mock_provider(args.mock_spec) if args.provider == "mock" else provider_named(args.provider)
     result = asyncio.run(generate_design_spec(intake, notes, job_id, provider))
     if result.spec is None:
         for issue in result.issues:

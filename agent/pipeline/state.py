@@ -172,6 +172,10 @@ class CodeGenerationOutput(BaseModel):
     """Written exclusively by the CODE_GENERATION node."""
 
     repo_url: str
+    preview_url: Optional[str] = None
+    """Where the built demo is being served (local: http://localhost:<port>)."""
+    template_commit: Optional[str] = None
+    """The site template commit the demo was built from."""
     test_results: Dict[str, Any] = Field(default_factory=dict)
     generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

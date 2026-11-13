@@ -22,6 +22,13 @@
       "when": 1791589769092,
       "tag": "0002_project_metrics",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794607525723,
+      "tag": "0003_demo_site",
+      "breakpoints": true
     }
   ]
 }

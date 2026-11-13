@@ -13,5 +13,11 @@ export const intakeSubmissions = pgTable("intake_submissions", {
   notes: text("notes"),
   status: text("status"),
   emailSent: boolean("email_sent"),
+  // Local demo build (agent/pipeline/run.py), kept apart from the intake's review status.
+  // demoStatus: null (never built) | "running" | "succeeded" | "failed"
+  demoUrl: text("demo_url"),
+  demoStatus: text("demo_status"),
+  demoError: text("demo_error"),
+  demoStartedAt: timestamp("demo_started_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 })

@@ -44,3 +44,42 @@ def anthropic_provider(model_id: Optional[str] = None) -> SpecProvider:
         return content if isinstance(content, str) else "".join(str(part) for part in content)
 
     return provide
+
+
+# A first run is about 9k tokens and the repair round pastes the failed reply
+# back in (~13k). Ollama silently truncates past num_ctx, which reads like bad
+# model output, so leave headroom.
+OLLAMA_NUM_CTX = 32_768
+
+
+def ollama_provider(model_id: Optional[str] = None, base_url: Optional[str] = None) -> SpecProvider:
+    """One call per attempt to a local Ollama server, JSON mode, temperature 0.
+
+    Model: ``model_id``, else AGENT_LOCAL_MODEL_ID, else config.DEFAULT_LOCAL_MODEL_ID.
+    Server: ``base_url``, else OLLAMA_HOST, else http://localhost:11434.
+    """
+    from pipeline.config import get_local_model_id
+
+    resolved = model_id if model_id is not None else get_local_model_id()
+
+    async def provide(system: str, user: str) -> str:
+        from langchain_core.messages import HumanMessage, SystemMessage
+        from langchain_ollama import ChatOllama  # deferred: tests never import a provider
+
+        model = ChatOllama(model=resolved, base_url=base_url, format="json", temperature=0, num_ctx=OLLAMA_NUM_CTX)
+        response = await model.ainvoke([SystemMessage(content=system), HumanMessage(content=user)])
+        content = response.content
+        return content if isinstance(content, str) else "".join(str(part) for part in content)
+
+    return provide
+
+
+def provider_named(name: str) -> SpecProvider:
+    """The CLI and pipeline.run pick a provider by name: mock, ollama, or anthropic."""
+    if name == "mock":
+        return mock_provider()
+    if name == "ollama":
+        return ollama_provider()
+    if name == "anthropic":
+        return anthropic_provider()
+    raise ValueError(f"unknown provider {name!r} (expected mock, ollama, or anthropic)")

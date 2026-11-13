@@ -45,6 +45,10 @@ export async function listIntakes() {
       status: intakeSubmissions.status,
       createdAt: intakeSubmissions.createdAt,
       notes: intakeSubmissions.notes,
+      demoUrl: intakeSubmissions.demoUrl,
+      demoStatus: intakeSubmissions.demoStatus,
+      demoError: intakeSubmissions.demoError,
+      demoStartedAt: intakeSubmissions.demoStartedAt,
     })
     .from(intakeSubmissions)
     .orderBy(desc(intakeSubmissions.createdAt))
