@@ -199,7 +199,10 @@ python -m pipeline.template_spec.cli --answers tests/fixtures/intake_answers_com
 ```
 
 `--provider ollama` calls a local model through Ollama (JSON mode, temperature 0, 32k context); the model is
-`AGENT_LOCAL_MODEL_ID`, default `qwen2.5:14b-instruct` (`pipeline/config.py`). `--provider anthropic` calls the
+`AGENT_LOCAL_MODEL_ID`, default `qwen2.5:32b-instruct` (`pipeline/config.py`). The local model is a stand-in until
+there is an API key: on an M5 Max it writes about 14 tokens/s, so a run takes ~15 minutes, and its first attempt
+usually misses a feature section that the repair round then adds. The 14B is twice as fast but valid only about half
+the time. `--provider anthropic` calls the
 Messages API through `langchain_anthropic` with the DESIGN node's model (`ANTHROPIC_API_KEY` from Doppler). It is
 wired but not yet exercised end-to-end.
 
@@ -237,8 +240,8 @@ flags such as `logo_unreadable` do not: the site still builds.
 ```bash
 DEMO_SITES_DIR=/Users/<you>/build-demo-sites   # turns the button on; one folder per intake
 # optional:
-AGENT_PROVIDER=ollama                          # or anthropic, or mock
-AGENT_LOCAL_MODEL_ID=qwen2.5:32b-instruct      # the local model
+AGENT_PROVIDER=ollama                          # anthropic once there is a key (then also set ANTHROPIC_API_KEY), or mock
+AGENT_LOCAL_MODEL_ID=qwen2.5:72b-instruct      # the local model (default qwen2.5:32b-instruct)
 AGENT_PYTHON=/path/to/python                   # default: agent/.venv/bin/python
 BUILD_TEMPLATE_SOURCE=/path/or/git/url         # default: ../BUILD_TEMPLATE_REPO (committed HEAD only)
 ```
@@ -246,7 +249,7 @@ BUILD_TEMPLATE_SOURCE=/path/or/git/url         # default: ../BUILD_TEMPLATE_REPO
 Open an intake under `/intakes` and press **Generate demo site** at the bottom. The run is detached from the
 console: reload the page to see it finish. The row's `demo_url`, `demo_status` and `demo_error` are filled from the
 job folder's `result.json` on the next page load, so restarting `next dev` mid-run is safe. The agent gets only
-`PATH`, `HOME` and `AGENT_*`/`OLLAMA_*`/`BUILD_TEMPLATE_SOURCE`, never the console's `DATABASE_URL` or secrets.
+`PATH`, `HOME` and `AGENT_*`/`OLLAMA_*`/`BUILD_TEMPLATE_SOURCE`, and `ANTHROPIC_API_KEY`, never the console's `DATABASE_URL` or other secrets.
 
 **From the shell**, with the same job-folder layout:
 

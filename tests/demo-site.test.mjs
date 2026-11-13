@@ -79,22 +79,24 @@ test("without DEMO_SITES_DIR the button does nothing", async () => {
   assert.equal(await startDemoBuild(ID), "unavailable");
 });
 
-test("a claimed run starts detached, reads intake.json, and never sees the console's secrets", async () => {
+test("a claimed run starts detached, reads intake.json, and never sees the console's secrets (only the model key)", async () => {
   const { db } = fakeDb([{ notes: NOTES }]);
   globalThis.__fakeDb = db;
   const seen = path.join(root, "seen.txt");
   const fake = path.join(root, "fake-python.sh");
-  await writeFile(fake, `#!/bin/sh\n{ cat; echo; echo "DB=\${DATABASE_URL:-unset} OLLAMA=\${OLLAMA_HOST:-unset}"; } > ${seen}\n`);
+  await writeFile(fake, `#!/bin/sh\n{ cat; echo; echo "DB=\${DATABASE_URL:-unset} OLLAMA=\${OLLAMA_HOST:-unset} KEY=\${ANTHROPIC_API_KEY:-unset}"; } > ${seen}\n`);
   await chmod(fake, 0o755);
   process.env.AGENT_PYTHON = fake;
   process.env.DATABASE_URL = "postgresql://platform-db";
   process.env.OLLAMA_HOST = "http://localhost:11434";
+  process.env.ANTHROPIC_API_KEY = "test-key";
   try {
     assert.equal(await startDemoBuild(ID), "started");
   } finally {
     delete process.env.AGENT_PYTHON;
     delete process.env.DATABASE_URL;
     delete process.env.OLLAMA_HOST;
+    delete process.env.ANTHROPIC_API_KEY;
   }
   assert.match(await readFile(path.join(root, ID, "run.pid"), "utf8"), /^\d+\n$/);
   let output = "";
@@ -103,7 +105,7 @@ test("a claimed run starts detached, reads intake.json, and never sees the conso
     output = await readFile(seen, "utf8").catch(() => "");
   }
   assert.ok(output.startsWith(NOTES));
-  assert.match(output, /DB=unset OLLAMA=http:\/\/localhost:11434/);
+  assert.match(output, /DB=unset OLLAMA=http:\/\/localhost:11434 KEY=test-key/);
 });
 
 test("an intake without saved answers fails instead of starting", async () => {

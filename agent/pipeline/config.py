@@ -84,7 +84,7 @@ _DEFAULTS: Dict[str, Dict[str, Any]] = {
 
 # Local model served by Ollama, used while there is no API key.
 # Override with AGENT_LOCAL_MODEL_ID (e.g. a larger qwen2.5 or llama build).
-DEFAULT_LOCAL_MODEL_ID = "qwen2.5:14b-instruct"
+DEFAULT_LOCAL_MODEL_ID = "qwen2.5:32b-instruct"
 
 
 def get_local_model_id() -> str:

@@ -97,9 +97,9 @@ export async function settleDemo<T extends DemoFields & { id: string }>(row: T):
   return { ...row, ...next }
 }
 
-/** Only what the agent needs: never the console's DATABASE_URL, AUTH_SECRET or Supabase keys. */
+/** Only what the agent needs (including the model key for AGENT_PROVIDER=anthropic): never the console's DATABASE_URL, AUTH_SECRET or Supabase keys. */
 function agentEnv(): NodeJS.ProcessEnv {
-  const keep = /^(PATH|HOME|OLLAMA_\w+|AGENT_\w+|BUILD_TEMPLATE_SOURCE)$/
+  const keep = /^(PATH|HOME|OLLAMA_\w+|AGENT_\w+|BUILD_TEMPLATE_SOURCE|ANTHROPIC_API_KEY)$/
   // cast: Next types NODE_ENV as always present, and the agent must not inherit it either
   return Object.fromEntries(Object.entries(process.env).filter(([key]) => keep.test(key))) as NodeJS.ProcessEnv
 }
