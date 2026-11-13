@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation"
 import { auth } from "@/src/auth"
+import { CLUB_ROLES } from "@/src/lib/auth/access"
 import AreaChart from "@/src/components/area-chart"
 import { ActivityFeed, CARD, PipelineStrip, StatTile } from "@/src/components/dashboard-panels"
 import { getPipeline, getRecentActivity, getStats, projectsPerDay } from "@/src/lib/dashboard-data"
 
-const CLUB_ROLES = ["admin", "reviewer", "member"]
 const TARGET_COST = 0.3 // PRD goal: about $0.30 of AI spend per project
 
 // Admin console home: the page you land on after signing in (sidebar comes from ../layout.tsx)

@@ -11,8 +11,8 @@ before deployment.
 | `pipeline/state.py` | Single Pydantic v2 state model shared across all nodes |
 | `pipeline/contracts.py` | Per-stage input/output contracts and readiness checks |
 | `pipeline/config.py` | Per-node model/retry/budget config, env-overridable |
-| `pipeline/nodes/` | One module per stage node (not yet implemented) |
-| `pipeline/template_spec/` | Intake answers → Claude prompt → `design-spec.json` in the site template's contract (mock provider by default) |
+| `pipeline/nodes/` | One module per stage node (`design.py` is implemented; the rest are not yet) |
+| `pipeline/template_spec/` | Intake answers → Claude prompt → `design-spec.json` in the site template's contract. Used by the DESIGN node and the CLI (mock provider by default) |
 | `tests/fixtures/` | Realistic JSON snapshots for unit testing |
 | `pyproject.toml` | Python project metadata and dependencies |
 
@@ -164,6 +164,8 @@ state = PipelineState.model_validate_json(
 ready, missing = STAGE_CONTRACTS[StageEnum.DESIGN].is_ready(state)
 print(ready)    # True
 print(missing)  # []
+# The DESIGN node also needs intake_output.project_spec in the {intake, notes} shape written by
+# pipeline.template_spec.intake_mapping.to_project_spec; any other shape is flagged for human review.
 
 # Raise on failure (use this inside nodes)
 validate_state_for_stage(StageEnum.DESIGN, state)
@@ -182,19 +184,38 @@ catalog) is vendored from the template under `pipeline/template_spec/template/`;
 when `BUILD_TEMPLATE_REPO` points at a checkout.
 
 ```bash
-# 1. Generate a spec. The default provider is a mock that replies with tests/fixtures/template_design_spec_valid.json.
+# 1. Generate a spec. The default provider is a mock that replies with tests/fixtures/template_design_reply_valid.json.
 python -m pipeline.template_spec.cli --answers tests/fixtures/intake_answers_complete.json --out /tmp/design-spec.json
 
 # 2. Build the site from it (scaffold placeholder content, apply tokens, lint, typecheck, build).
 scripts/build_site_from_spec.sh /tmp/design-spec.json            # template dir defaults to ../BUILD_TEMPLATE_REPO
 
-# Manual path: write the prompt, paste system.md then user.md into Claude Code, save its reply, then validate it.
+# Manual path: write the prompt, paste system.md then user.md into Claude Code, save its reply, then check it.
+# --out writes the final spec (the reply's {text, field} assumptions become the plain strings the template expects).
 python -m pipeline.template_spec.cli --answers tests/fixtures/intake_answers_complete.json --print-prompt /tmp/prompt
-python -m pipeline.template_spec.cli --answers tests/fixtures/intake_answers_complete.json --validate /tmp/claude-spec.json
+python -m pipeline.template_spec.cli --answers tests/fixtures/intake_answers_complete.json \
+  --validate /tmp/claude-reply.json --out /tmp/claude-spec.json
 ```
 
 `--provider anthropic` calls the Messages API through `langchain_anthropic` with the DESIGN node's model
 (`ANTHROPIC_API_KEY` from Doppler). It is wired but not yet exercised end-to-end.
+
+### What the DESIGN node adds around the spec
+
+`pipeline/nodes/design.py` runs the same generate / validate / repair loop and writes `DesignOutput`:
+
+- **Logo colors (BUI-71).** With a logo and no brand colors, the logo is fetched (direct `https://` only) and its
+  two main colors become `brand_colors`; `brand_colors_source` records `"intake"` or `"logo"`. The colors are
+  reused on reruns while the logo URL is unchanged. A logo that cannot be fetched or read adds a
+  `logo_unreadable` flag to the spec. Intake uploads are stored as `supabase://` URLs, which the fetcher cannot
+  read yet (BUI-93), so today every uploaded logo gets that flag.
+- **Reruns.** `reviewer_notes` always go into the prompt. When `design_output` already holds a spec, the previous
+  spec goes in too and `revision` goes up by one. Surviving sections must keep their ids (`template_spec/revisions.py`): an
+  unambiguous regenerated id is written back in code; an ambiguous one costs the repair round, then the job is
+  flagged for human review.
+- **Source log.** `source_log` has one row per value in the spec saying where it came from: `intake`, `logo`,
+  `rule` or `claude` (`template_spec/sources.py`). It is append-only across revisions. It lives only in pipeline
+  state for now, so that state has to be stored durably; a table comes when the admin console reads the log.
 
 ### Rerunning the full demo from a stored intake
 
@@ -211,8 +232,8 @@ CONTENT/SEO agents until those nodes exist.
 python -m pipeline.template_spec.cli --answers /tmp/intake.json --print-prompt /tmp/prompt
 
 # 3. Play the DESIGN agent: in Claude Code, "Read /tmp/prompt/system.md and /tmp/prompt/user.md and write only
-#    the JSON to /tmp/claude-spec.json". Then check it the way the API path would.
-python -m pipeline.template_spec.cli --answers /tmp/intake.json --validate /tmp/claude-spec.json
+#    the JSON to /tmp/claude-reply.json". Then check it the way the API path would and write the final spec.
+python -m pipeline.template_spec.cli --answers /tmp/intake.json --validate /tmp/claude-reply.json --out /tmp/claude-spec.json
 
 # 4. Drop the spec into the template: deletes the old content, scaffolds placeholders, applies tokens, builds.
 scripts/build_site_from_spec.sh /tmp/claude-spec.json          # template dir defaults to ../BUILD_TEMPLATE_REPO

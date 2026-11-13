@@ -67,3 +67,15 @@ def test_missing_out_directory_is_a_clean_error(tmp_path: pathlib.Path, capsys: 
     out = tmp_path / "nope" / "design-spec.json"
     assert main(["--answers", ANSWERS, "--out", str(out)]) == 1
     assert "nope" in capsys.readouterr().err
+
+
+def test_validate_with_out_writes_the_final_spec_from_a_saved_reply(tmp_path: pathlib.Path) -> None:
+    out = tmp_path / "design-spec.json"
+    assert main(["--answers", ANSWERS, "--validate", str(FIX / "template_design_reply_valid.json"), "--out", str(out)]) == 0
+    assert json.loads(out.read_text()) == json.loads((FIX / "template_design_spec_valid.json").read_text())
+
+
+def test_validate_with_out_in_a_missing_directory_is_a_clean_error(tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
+    out = tmp_path / "missing" / "design-spec.json"
+    assert main(["--answers", ANSWERS, "--validate", str(FIX / "template_design_reply_valid.json"), "--out", str(out)]) == 1
+    assert "output directory does not exist" in capsys.readouterr().err

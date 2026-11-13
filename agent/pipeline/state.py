@@ -151,8 +151,20 @@ class DesignOutput(BaseModel):
     page_map: Dict[str, Any]
     component_patterns: List[str] = Field(default_factory=list)
     design_spec: Optional[Dict[str, Any]] = None
-    """The validated design_spec contract (pipeline.design_spec.schema.DesignSpec),
-    stored as plain JSON so downstream stages and reruns can re-validate it."""
+    """The validated design-spec.json in the site template's contract
+    (pipeline.template_spec), as plain JSON so reruns can compare against it."""
+    revision: int = 1
+    """1 for the first spec of a job; each DESIGN rerun adds one."""
+    brand_colors_source: Optional[str] = None
+    """"intake" when the client gave brand colors, "logo" when they were read from the uploaded logo, else None."""
+    logo_colors: Optional[Dict[str, Any]] = None
+    """``{"url", "colors"}``: the colors read from the logo at that URL, reused on a rerun while the URL is unchanged."""
+    assumptions: List[Dict[str, Optional[str]]] = Field(default_factory=list)
+    """Each guess in design_spec.assumptions as ``{text, field}``: the intake field it is about."""
+    source_log: List[Dict[str, Any]] = Field(default_factory=list)
+    """Append-only: where every value in design_spec came from, one row per value and
+    revision (pipeline.template_spec.sources). It lives only here until a table and the
+    admin console read it, so this state must be stored durably."""
     designed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 

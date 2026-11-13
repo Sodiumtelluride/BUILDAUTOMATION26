@@ -1,0 +1,561 @@
+{
+  "job_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "tokens": {
+    "colors": {
+      "background": "#FFFFFF",
+      "foreground": "#0F172A",
+      "card": "#FFFFFF",
+      "card-foreground": "#0F172A",
+      "popover": "#FFFFFF",
+      "popover-foreground": "#0F172A",
+      "primary": "#2E7D32",
+      "primary-foreground": "#FFFFFF",
+      "secondary": "#FFA000",
+      "secondary-foreground": "#1A1A1A",
+      "muted": "#F1F5F9",
+      "muted-foreground": "#475569",
+      "accent": "#E8F5E9",
+      "accent-foreground": "#1B5E20",
+      "destructive": "#DC2626",
+      "destructive-foreground": "#FFFFFF",
+      "border": "#E2E8F0",
+      "input": "#E2E8F0",
+      "ring": "#2E7D32"
+    },
+    "fonts": {
+      "heading": "Instrument Serif",
+      "body": "Inter"
+    },
+    "radius": "0.75rem",
+    "contrast_adjustments": []
+  },
+  "pages": [
+    {
+      "slug": "/",
+      "sections": [
+        {
+          "id": "hero-1",
+          "type": "hero-bold",
+          "components": [
+            "button"
+          ],
+          "content_blocks": [
+            {
+              "id": "hero.headline",
+              "kind": "headline",
+              "max_chars": 80
+            },
+            {
+              "id": "hero.subhead",
+              "kind": "subhead",
+              "max_chars": 160
+            },
+            {
+              "id": "hero.primary_cta",
+              "kind": "cta"
+            },
+            {
+              "id": "hero.secondary_cta",
+              "kind": "cta"
+            },
+            {
+              "id": "hero.image",
+              "kind": "image"
+            }
+          ],
+          "source_fields": [
+            "organization_name",
+            "organization_description",
+            "tone"
+          ]
+        },
+        {
+          "id": "stats-1",
+          "type": "stats-bold",
+          "components": [],
+          "content_blocks": [
+            {
+              "id": "stats.headline",
+              "kind": "headline",
+              "max_chars": 80
+            },
+            {
+              "id": "stats.stat_1",
+              "kind": "stat"
+            },
+            {
+              "id": "stats.stat_2",
+              "kind": "stat"
+            },
+            {
+              "id": "stats.stat_3",
+              "kind": "stat"
+            }
+          ],
+          "source_fields": [
+            "organization_description"
+          ]
+        },
+        {
+          "id": "programs-1",
+          "type": "programs-bold",
+          "components": [
+            "card"
+          ],
+          "content_blocks": [
+            {
+              "id": "programs.headline",
+              "kind": "headline",
+              "max_chars": 80
+            },
+            {
+              "id": "programs.intro",
+              "kind": "body",
+              "max_chars": 400
+            },
+            {
+              "id": "programs.items",
+              "kind": "items",
+              "max_chars": 60
+            }
+          ],
+          "source_fields": [
+            "organization_description",
+            "target_audience"
+          ]
+        },
+        {
+          "id": "cta-1",
+          "type": "cta-bold",
+          "components": [
+            "button"
+          ],
+          "content_blocks": [
+            {
+              "id": "cta.headline",
+              "kind": "headline",
+              "max_chars": 80
+            },
+            {
+              "id": "cta.body",
+              "kind": "body",
+              "max_chars": 400
+            },
+            {
+              "id": "cta.button",
+              "kind": "cta"
+            }
+          ],
+          "source_fields": [
+            "primary_goal"
+          ]
+        },
+        {
+          "id": "newsletter-1",
+          "type": "newsletter-signup",
+          "components": [
+            "input",
+            "button"
+          ],
+          "content_blocks": [
+            {
+              "id": "newsletter.headline",
+              "kind": "headline",
+              "max_chars": 80
+            },
+            {
+              "id": "newsletter.body",
+              "kind": "body",
+              "max_chars": 400
+            },
+            {
+              "id": "newsletter.cta",
+              "kind": "cta"
+            }
+          ],
+          "source_fields": [
+            "features",
+            "integrations"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "/about",
+      "sections": [
+        {
+          "id": "hero-2",
+          "type": "hero-bold",
+          "components": [
+            "button"
+          ],
+          "content_blocks": [
+            {
+              "id": "hero.headline",
+              "kind": "headline",
+              "max_chars": 80
+            },
+            {
+              "id": "hero.subhead",
+              "kind": "subhead",
+              "max_chars": 160
+            },
+            {
+              "id": "hero.primary_cta",
+              "kind": "cta"
+            },
+            {
+              "id": "hero.secondary_cta",
+              "kind": "cta"
+            },
+            {
+              "id": "hero.image",
+              "kind": "image"
+            }
+          ],
+          "source_fields": [
+            "organization_description"
+          ]
+        },
+        {
+          "id": "programs-2",
+          "type": "programs-bold",
+          "components": [
+            "card"
+          ],
+          "content_blocks": [
+            {
+              "id": "programs.headline",
+              "kind": "headline",
+              "max_chars": 80
+            },
+            {
+              "id": "programs.intro",
+              "kind": "body",
+              "max_chars": 400
+            },
+            {
+              "id": "programs.items",
+              "kind": "items",
+              "max_chars": 60
+            }
+          ],
+          "source_fields": [
+            "organization_description"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "/team",
+      "sections": [
+        {
+          "id": "hero-3",
+          "type": "hero-bold",
+          "components": [
+            "button"
+          ],
+          "content_blocks": [
+            {
+              "id": "hero.headline",
+              "kind": "headline",
+              "max_chars": 80
+            },
+            {
+              "id": "hero.subhead",
+              "kind": "subhead",
+              "max_chars": 160
+            },
+            {
+              "id": "hero.primary_cta",
+              "kind": "cta"
+            },
+            {
+              "id": "hero.secondary_cta",
+              "kind": "cta"
+            },
+            {
+              "id": "hero.image",
+              "kind": "image"
+            }
+          ],
+          "source_fields": [
+            "pages"
+          ]
+        },
+        {
+          "id": "team-1",
+          "type": "team-bold",
+          "components": [
+            "card"
+          ],
+          "content_blocks": [
+            {
+              "id": "team.headline",
+              "kind": "headline",
+              "max_chars": 80
+            },
+            {
+              "id": "team.intro",
+              "kind": "body",
+              "max_chars": 400
+            },
+            {
+              "id": "team.members",
+              "kind": "items",
+              "max_chars": 60
+            }
+          ],
+          "source_fields": [
+            "pages"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "/donate",
+      "sections": [
+        {
+          "id": "hero-4",
+          "type": "hero-bold",
+          "components": [
+            "button"
+          ],
+          "content_blocks": [
+            {
+              "id": "hero.headline",
+              "kind": "headline",
+              "max_chars": 80
+            },
+            {
+              "id": "hero.subhead",
+              "kind": "subhead",
+              "max_chars": 160
+            },
+            {
+              "id": "hero.primary_cta",
+              "kind": "cta"
+            },
+            {
+              "id": "hero.secondary_cta",
+              "kind": "cta"
+            },
+            {
+              "id": "hero.image",
+              "kind": "image"
+            }
+          ],
+          "source_fields": [
+            "primary_goal"
+          ]
+        },
+        {
+          "id": "donate-1",
+          "type": "donate",
+          "components": [
+            "card",
+            "button"
+          ],
+          "content_blocks": [
+            {
+              "id": "donate.headline",
+              "kind": "headline",
+              "max_chars": 80
+            },
+            {
+              "id": "donate.body",
+              "kind": "body",
+              "max_chars": 400
+            },
+            {
+              "id": "donate.cta",
+              "kind": "cta"
+            },
+            {
+              "id": "donate.items",
+              "kind": "items",
+              "max_chars": 60
+            }
+          ],
+          "source_fields": [
+            "features",
+            "integrations",
+            "primary_goal"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "/contact",
+      "sections": [
+        {
+          "id": "hero-5",
+          "type": "hero-bold",
+          "components": [
+            "button"
+          ],
+          "content_blocks": [
+            {
+              "id": "hero.headline",
+              "kind": "headline",
+              "max_chars": 80
+            },
+            {
+              "id": "hero.subhead",
+              "kind": "subhead",
+              "max_chars": 160
+            },
+            {
+              "id": "hero.primary_cta",
+              "kind": "cta"
+            },
+            {
+              "id": "hero.secondary_cta",
+              "kind": "cta"
+            },
+            {
+              "id": "hero.image",
+              "kind": "image"
+            }
+          ],
+          "source_fields": [
+            "pages"
+          ]
+        },
+        {
+          "id": "contact-1",
+          "type": "contact-block",
+          "components": [],
+          "content_blocks": [
+            {
+              "id": "contact.headline",
+              "kind": "headline",
+              "max_chars": 80
+            },
+            {
+              "id": "contact.body",
+              "kind": "body",
+              "max_chars": 400
+            },
+            {
+              "id": "contact.email",
+              "kind": "label",
+              "max_chars": 40
+            },
+            {
+              "id": "contact.hours",
+              "kind": "label",
+              "max_chars": 40
+            }
+          ],
+          "source_fields": [
+            "features",
+            "pages"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "/faq",
+      "sections": [
+        {
+          "id": "hero-6",
+          "type": "hero-bold",
+          "components": [
+            "button"
+          ],
+          "content_blocks": [
+            {
+              "id": "hero.headline",
+              "kind": "headline",
+              "max_chars": 80
+            },
+            {
+              "id": "hero.subhead",
+              "kind": "subhead",
+              "max_chars": 160
+            },
+            {
+              "id": "hero.primary_cta",
+              "kind": "cta"
+            },
+            {
+              "id": "hero.secondary_cta",
+              "kind": "cta"
+            },
+            {
+              "id": "hero.image",
+              "kind": "image"
+            }
+          ],
+          "source_fields": [
+            "pages"
+          ]
+        },
+        {
+          "id": "programs-3",
+          "type": "programs-bold",
+          "components": [
+            "card"
+          ],
+          "content_blocks": [
+            {
+              "id": "programs.headline",
+              "kind": "headline",
+              "max_chars": 80
+            },
+            {
+              "id": "programs.intro",
+              "kind": "body",
+              "max_chars": 400
+            },
+            {
+              "id": "programs.items",
+              "kind": "items",
+              "max_chars": 60
+            }
+          ],
+          "source_fields": [
+            "pages",
+            "target_audience"
+          ]
+        }
+      ]
+    }
+  ],
+  "features": [
+    "contact_form",
+    "donation_button",
+    "newsletter_signup"
+  ],
+  "data_requirements": [],
+  "integrations": [
+    "stripe",
+    "google_analytics",
+    "mailchimp"
+  ],
+  "flags": [
+    {
+      "code": "font_substituted",
+      "detail": "Source Serif 4 is not bundled; Instrument Serif used for headings"
+    }
+  ],
+  "assumptions": [
+    {
+      "text": "The bold theme family (the default) fits the friendly, energetic tone and the rounded, generous visual style.",
+      "field": "tone"
+    },
+    {
+      "text": "primary is the client's forest green #2E7D32 and secondary the warm amber #FFA000; the remaining roles are a light palette derived for WCAG AA body contrast.",
+      "field": "brand_colors"
+    },
+    {
+      "text": "The FAQ page reuses programs-bold, with each question as an item, because the catalog has no accordion.",
+      "field": "pages"
+    },
+    {
+      "text": "The contact form feature is rendered by contact-block with the organization's email; the donation button by the donate section linking to Stripe; newsletter_signup by newsletter-signup on the home page.",
+      "field": "features"
+    }
+  ]
+}

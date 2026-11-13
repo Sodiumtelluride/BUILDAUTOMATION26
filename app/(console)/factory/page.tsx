@@ -1,12 +1,11 @@
 import { desc } from "drizzle-orm"
 import { redirect } from "next/navigation"
 import { auth } from "@/src/auth"
+import { CLUB_ROLES } from "@/src/lib/auth/access"
 import { getDb } from "@/src/db"
 import { projectMetrics } from "@/src/db/schema/project-metrics"
 import { CARD, StatusPill } from "@/src/components/dashboard-panels"
 import { STAGE_NAMES } from "@/src/lib/dashboard-data"
-
-const CLUB_ROLES = ["admin", "reviewer", "member"]
 
 // Projects page (App Factory): one card per project with its stage, progress, and AI usage
 export default async function FactoryPage() {

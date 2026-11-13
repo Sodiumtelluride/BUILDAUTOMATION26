@@ -5,26 +5,12 @@ import { organizations } from "@/src/db/schema/organizations"
 import { intakeJobs } from "@/src/db/schema/intake-jobs"
 import { intakeSubmissions } from "@/src/db/schema/intake-submissions"
 import { auth } from "@/src/auth"
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-function submissionLinks(notes: string | null) {
-  if (!notes) return null
-  try {
-    const value: unknown = JSON.parse(notes)
-    if (!value || typeof value !== "object" || !("version" in value) || value.version !== 1 ||
-      !("organizationId" in value) || typeof value.organizationId !== "string" || !UUID_RE.test(value.organizationId) ||
-      !("jobId" in value) || typeof value.jobId !== "string" || !UUID_RE.test(value.jobId)) return null
-    return { organizationId: value.organizationId, jobId: value.jobId }
-  } catch {
-    return null
-  }
-}
+import { parseIntakeNotes, REVIEW_ROLES, UUID_RE } from "@/src/lib/intake-data"
 
 async function authorizeReviewer() {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ success: false, error: "Authentication required" }, { status: 401 })
-  if (!["admin", "reviewer"].includes(session.user.role)) return NextResponse.json({ success: false, error: "Reviewer access required" }, { status: 403 })
+  if (!REVIEW_ROLES.includes(session.user.role)) return NextResponse.json({ success: false, error: "Reviewer access required" }, { status: 403 })
   return null
 }
 
@@ -59,7 +45,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
       )
     }
 
-    const links = submissionLinks(submission.notes)
+    const links = parseIntakeNotes(submission.notes)?.links ?? null
     const [organization] = submission.clientEmail
       ? await db
           .select()

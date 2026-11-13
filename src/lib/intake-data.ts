@@ -7,15 +7,27 @@ import type { UploadedIntakeFile } from "@/src/lib/intake/uploads"
 // Intake forms hold client contact details, so only these roles can see them (same rule as the intake API)
 export const REVIEW_ROLES = ["admin", "reviewer"]
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-/** Reads the full form answers saved as JSON in the notes column. Returns null for older submissions without them. */
-export function parseIntakeNotes(notes: string | null): { answers: Partial<IntakeAnswers>; attachments: UploadedIntakeFile[] } | null {
+/**
+ * Reads the full form answers saved as JSON in the notes column. Returns null for older submissions without them.
+ * `links` are the organization and job the submission created, or null if either id is missing or malformed.
+ */
+export function parseIntakeNotes(notes: string | null): {
+  answers: Partial<IntakeAnswers>
+  attachments: UploadedIntakeFile[]
+  links: { organizationId: string; jobId: string } | null
+} | null {
   if (!notes) return null
   try {
     const value = JSON.parse(notes)
     if (value?.version !== 1 || typeof value.answers !== "object" || value.answers === null) return null
-    return { answers: value.answers, attachments: Array.isArray(value.attachments) ? value.attachments : [] }
+    const hasLinks = [value.organizationId, value.jobId].every((id) => typeof id === "string" && UUID_RE.test(id))
+    return {
+      answers: value.answers,
+      attachments: Array.isArray(value.attachments) ? value.attachments : [],
+      links: hasLinks ? { organizationId: value.organizationId, jobId: value.jobId } : null,
+    }
   } catch {
     return null
   }

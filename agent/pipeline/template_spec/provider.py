@@ -2,7 +2,7 @@
 Where the model reply comes from.
 
 A provider is ``async (system, user) -> raw text``. The mock returns a file
-(the valid fixture by default) so the whole flow runs with no network; the
+(a valid model reply by default) so the whole flow runs with no network; the
 Anthropic provider is the production path and is not exercised by tests.
 """
 
@@ -15,7 +15,7 @@ from pipeline.config import get_node_config
 
 SpecProvider = Callable[[str, str], Awaitable[str]]
 
-DEFAULT_MOCK_SPEC = Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "template_design_spec_valid.json"
+DEFAULT_MOCK_SPEC = Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "template_design_reply_valid.json"
 
 
 def mock_provider(path: Path = DEFAULT_MOCK_SPEC) -> SpecProvider:

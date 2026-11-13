@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from .catalog import TemplateCatalog
 from .intake import PAGE_SLUGS, DesignIntake
@@ -21,6 +21,7 @@ from .validate import FEATURE_SECTIONS, MEMBER_FORM_TYPE
 
 FLAG_FONT_SUBSTITUTED = "font_substituted"
 FLAG_UNSUPPORTED_FEATURE = "unsupported_feature"
+FLAG_LOGO_UNREADABLE = "logo_unreadable"  # added by the DESIGN node, never by the model
 
 MAX_CHARS: Dict[str, int] = {"headline": 80, "subhead": 160, "body": 400, "label": 40, "items": 60}
 
@@ -137,8 +138,11 @@ _EXAMPLE: Dict[str, Any] = {
         {"code": FLAG_UNSUPPORTED_FEATURE, "detail": "donation_button has no section in the catalog; the donate page uses a cta-bold linking to Stripe"},
     ],
     "assumptions": [
-        "The bold theme family (the default) fits the friendly, energetic tone and the visual style asked for.",
-        "primary is the client's forest green #2E7D32 and secondary the warm amber #FFA000; the other roles are a light palette with WCAG AA body contrast.",
+        {"text": "The bold theme family (the default) fits the friendly, energetic tone and the visual style asked for.", "field": "tone"},
+        {
+            "text": "primary is the client's forest green #2E7D32 and secondary the warm amber #FFA000; the other roles are a light palette with WCAG AA body contrast.",
+            "field": "brand_colors",
+        },
     ],
 }
 
@@ -178,7 +182,9 @@ def render_system_prompt(catalog: TemplateCatalog) -> str:
         "- job_id: the job id given in the message, copied exactly.",
         f"- tokens.colors: an object keyed by these shadcn roles, hyphenated, hex values (#RRGGBB): {color_roles}.",
         f"- tokens.fonts: {{heading, body}}. heading must be one of: {fonts}. body must be Inter.",
-        "- tokens.radius: one CSS length such as 0.5rem or 0.75rem. tokens.contrast_adjustments: [].",
+        "- tokens.radius: one CSS length such as 0.5rem or 0.75rem.",
+        "- tokens.contrast_adjustments: one {role, from, to} for each brand color you changed to meet contrast",
+        "  (from = the client's hex, to = the value you put in tokens.colors[role]); [] when you changed none.",
         "- pages: one entry per requested page: {slug, sections}. slug is \"/\" or \"/lowercase-path\".",
         "- sections: {id, type, components, content_blocks, source_fields}. type is a catalog type id (section 2).",
         "  content_blocks are that type's catalog blocks, ids copied exactly: {id, kind, max_chars?}.",
@@ -186,7 +192,9 @@ def render_system_prompt(catalog: TemplateCatalog) -> str:
         "  source_fields: the intake field names (snake_case, as given in the message) that motivated the section.",
         "- features: the intake's feature names as given. integrations: the intake's integrations as given.",
         "- data_requirements: [] unless the site has a member-application-form section; then [{\"recipe\": \"form_submissions\"}].",
-        "- flags: [{code, detail}] for anything the reviewer must look at. assumptions: one plain sentence per guess you made.",
+        "- flags: [{code, detail}] for anything the reviewer must look at.",
+        "- assumptions: one {text, field} per guess you made. text is one plain sentence; field is the single intake",
+        "  field name (snake_case, as given in the message) the guess is about.",
         "",
         "2. Section catalog (the ONLY allowed type ids and block ids; blocks not marked optional are required):",
         *_catalog_lines(catalog),
@@ -212,6 +220,7 @@ def render_system_prompt(catalog: TemplateCatalog) -> str:
         "With no brand colors and a logo, choose a palette the logo's colors would sit well on and say so. With no",
         "branding at all, use a calm palette suited to the organization type and say so. The site is light-only:",
         "background is white or near-white, every foreground on its background meets WCAG AA (4.5:1 for body text).",
+        "If a brand color fails that, darken or lighten it just enough and record it in tokens.contrast_adjustments.",
         "",
         f"6. Fonts: if the intake names fonts outside [{fonts}], use the closest allowed pair (serif-looking headings ->",
         f"Instrument Serif, otherwise Inter) and add a flag with code \"{FLAG_FONT_SUBSTITUTED}\" naming the requested fonts.",
@@ -225,7 +234,10 @@ def render_system_prompt(catalog: TemplateCatalog) -> str:
         "8. The client's content exclusions are a hard constraint on every choice. Reference sites are inspiration",
         "only; never copy their structure or content.",
         "",
-        "9. Fill source_fields on every section and put every guess in assumptions.",
+        "9. Fill source_fields on every section (at least one intake field name) and put every guess in assumptions.",
+        "",
+        "10. Revisions: when the message includes a previous spec, change only what the reviewer's notes ask for.",
+        "Every section that stays keeps its id, type and page. Never reuse an old id for a different section.",
         "",
         "Example (two pages shown; yours lists every requested page):",
         EXAMPLE_SPEC,
@@ -239,8 +251,14 @@ def render_user_message(
     job_id: uuid.UUID,
     previous_issues: Sequence[str] = (),
     previous_reply: str = "",
+    previous_spec: Optional[Mapping[str, Any]] = None,
+    reviewer_notes: Optional[str] = None,
 ) -> str:
-    """The per-job message: intake, notes, job id, and on a retry the previous reply with its problems."""
+    """The per-job message: intake, notes, job id, the reviewer's notes when there are any; on a rerun
+    the previous spec; on a retry the previous reply with its problems.
+
+    ``previous_spec`` must be in the reply's shape (``sources.to_reply_shape``), so a model that copies
+    it unchanged returns a valid reply."""
     lines = [
         f"Job id: {job_id}",
         "",
@@ -262,6 +280,10 @@ def render_user_message(
     note_lines += [f"- {dropped}" for dropped in notes.dropped]
     if note_lines:
         lines += ["", "Notes:", *note_lines]
+    if previous_spec is not None:
+        lines += ["", "This is a revision. The previous spec for this job:", json.dumps(previous_spec, indent=2)]
+    if reviewer_notes and reviewer_notes.strip():
+        lines += ["", "Reviewer notes:", reviewer_notes.strip()]
     if previous_issues:
         lines += ["", "Your previous spec had these problems. Return the corrected complete spec:", *[f"- {i}" for i in previous_issues]]
         if previous_reply:
