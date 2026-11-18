@@ -5,21 +5,9 @@ import { organizations } from "@/src/db/schema/organizations"
 import { intakeJobs } from "@/src/db/schema/intake-jobs"
 import { intakeSubmissions } from "@/src/db/schema/intake-submissions"
 import { auth } from "@/src/auth"
+import { submissionLinks } from "@/src/lib/intake/job-status"
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-function submissionLinks(notes: string | null) {
-  if (!notes) return null
-  try {
-    const value: unknown = JSON.parse(notes)
-    if (!value || typeof value !== "object" || !("version" in value) || value.version !== 1 ||
-      !("organizationId" in value) || typeof value.organizationId !== "string" || !UUID_RE.test(value.organizationId) ||
-      !("jobId" in value) || typeof value.jobId !== "string" || !UUID_RE.test(value.jobId)) return null
-    return { organizationId: value.organizationId, jobId: value.jobId }
-  } catch {
-    return null
-  }
-}
 
 async function authorizeReviewer() {
   const session = await auth()
