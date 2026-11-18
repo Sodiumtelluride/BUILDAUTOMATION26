@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Check, ChevronLeft, ChevronRight, LoaderCircle, Upload, X } from "lucide-react";
 import { IntakeSubmissionError, submitIntake } from "./submission";
+import { statusPagePath } from "@/src/lib/intake/job-status";
 import {
   CONTENT_OPTIONS,
   CONTENT_PARTIAL,
@@ -899,6 +901,8 @@ function ReviewAnswers({ data, onEdit }: { data: IntakeFormData; onEdit: (sectio
   );
 }
 
+// Shown for the instant between a successful submit and landing on the
+// status page, and as a fallback link if client navigation doesn't happen.
 function SuccessScreen({ referenceNo, email }: { referenceNo: string; email: string }) {
   return (
     <main className="min-h-dvh bg-black flex flex-col items-center justify-center px-6 py-12 text-center">
@@ -906,16 +910,13 @@ function SuccessScreen({ referenceNo, email }: { referenceNo: string; email: str
         <Check size={40} className="text-white" aria-hidden="true" />
       </div>
       <h1 tabIndex={-1} ref={(element) => element?.focus()} className="text-4xl sm:text-5xl font-black text-white mb-4 tracking-tight outline-none">Project received.</h1>
-      <p className="text-gray-300 text-base max-w-sm leading-relaxed">
-        Thank you for submitting your intake form. The BUILD UMass team will review your
-        project and get back to you soon.
-      </p>
+      <p className="text-gray-300 text-base max-w-sm leading-relaxed" role="status">Taking you to your project&apos;s progress page…</p>
       <p className="mt-8 text-sm text-gray-400">Your reference number</p>
       <p className="mt-2 rounded-xl border border-white/20 px-5 py-3 font-mono text-lg text-white">{referenceNo}</p>
       <p className="mt-4 max-w-sm text-sm leading-relaxed text-gray-400">
         We&apos;re emailing a copy of your responses to <span className="text-gray-200 break-all">{email}</span>. It can take a few minutes; check your spam folder if you don&apos;t see it. Keep your reference number for your records.
       </p>
-      <Link href="/" className="mt-8 min-h-11 rounded-full px-5 py-3 text-sm font-semibold text-white underline underline-offset-4 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white">Back to BUILD</Link>
+      <Link href={statusPagePath(referenceNo)} className="mt-8 min-h-11 rounded-full px-5 py-3 text-sm font-semibold text-white underline underline-offset-4 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white">Go to progress page</Link>
     </main>
   );
 }
@@ -923,6 +924,7 @@ function SuccessScreen({ referenceNo, email }: { referenceNo: string; email: str
 // ---------- Form ----------
 
 export function IntakeForm() {
+  const router = useRouter();
   const [section, setSection] = useState(0);
   const [referenceNo, setReferenceNo] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -932,6 +934,11 @@ export function IntakeForm() {
   const [focusTarget, setFocusTarget] = useState<{ key: string } | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const submittingRef = useRef(false);
+
+  // Replace (not push) so Back doesn't land on the submitted form.
+  useEffect(() => {
+    if (referenceNo) router.replace(statusPagePath(referenceNo));
+  }, [referenceNo, router]);
 
   useEffect(() => {
     if (focusTarget) document.getElementById(fieldId(focusTarget.key))?.focus();
