@@ -1,0 +1,1 @@
+CREATE INDEX "intake_submissions_reference_no_idx" ON "intake_submissions" USING btree ("reference_no");
