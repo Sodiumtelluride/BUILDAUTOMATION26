@@ -48,6 +48,9 @@ const PROJECT_STATUS: Record<string, { label: string; color: string }> = {
   approved: { label: "Approved", color: STATUS.good },
   deployed: { label: "Live", color: STATUS.good },
   failed: { label: "Failed", color: STATUS.critical },
+  // demo site builds (intake_submissions.demo_status)
+  running: { label: "Building", color: BLUE },
+  succeeded: { label: "Ready", color: STATUS.good },
 }
 
 /** Small rounded label showing a project's status, e.g. "● Awaiting review". */

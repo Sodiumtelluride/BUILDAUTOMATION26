@@ -118,3 +118,20 @@ async def test_member_form_feature_requires_the_form_section() -> None:
     result = await generate_design_spec(intake, notes, JOB, mock_provider(), max_attempts=1)
     assert result.spec is None
     assert "features: member_application_form requires a member-application-form section" in result.issues
+
+
+async def test_plain_string_assumptions_are_sent_back_for_repair() -> None:
+    intake, notes = _intake()
+    unlinked = json.loads(VALID)
+    unlinked["assumptions"] = [a["text"] for a in unlinked["assumptions"]]
+    seen: List[str] = []
+
+    async def provider(system: str, user: str) -> str:
+        seen.append(user)
+        return json.dumps(unlinked) if len(seen) == 1 else VALID
+
+    result = await generate_design_spec(intake, notes, JOB, provider)
+    assert result.spec is not None and result.attempts == 2
+    assert "assumptions[0]: must be" in seen[1]
+    assert all(isinstance(a, str) for a in result.spec["assumptions"]), "the saved spec keeps the template's plain strings"
+    assert [link.field for link in result.assumptions] == ["tone", "brand_colors", "pages", "features"]

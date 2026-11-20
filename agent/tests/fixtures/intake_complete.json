@@ -23,10 +23,23 @@
     "mission": "Eliminating food insecurity in Western Massachusetts through community partnerships and direct distribution.",
     "cause_area": "food_security",
     "target_audience": "Families and individuals experiencing food insecurity in Hampden and Hampshire counties",
-    "desired_pages": ["home", "about", "get_help", "donate", "volunteer", "contact"],
-    "brand_colors": ["#2E7D32", "#FFA000"],
+    "desired_pages": [
+      "home",
+      "about",
+      "get_help",
+      "donate",
+      "volunteer",
+      "contact"
+    ],
+    "brand_colors": [
+      "#2E7D32",
+      "#FFA000"
+    ],
     "tone": "warm, approachable, urgent",
-    "existing_assets": ["logo_green.svg", "photo_distribution_day.jpg"],
+    "existing_assets": [
+      "logo_green.svg",
+      "photo_distribution_day.jpg"
+    ],
     "special_requirements": "Bilingual Spanish/English content on the Get Help page"
   },
   "asset_references": [
@@ -40,7 +53,13 @@
         "org_name": "Boston Area Gleaners",
         "similarity_score": 0.91,
         "cause_area": "food_security",
-        "pages": ["home", "about", "donate", "volunteer", "news"],
+        "pages": [
+          "home",
+          "about",
+          "donate",
+          "volunteer",
+          "news"
+        ],
         "repo_url": "https://github.com/build-umass/boston-area-gleaners"
       },
       {
@@ -48,27 +67,73 @@
         "org_name": "Hilltown Community Food Pantry",
         "similarity_score": 0.87,
         "cause_area": "food_security",
-        "pages": ["home", "get_help", "donate", "contact"],
+        "pages": [
+          "home",
+          "get_help",
+          "donate",
+          "contact"
+        ],
         "repo_url": "https://github.com/build-umass/hilltown-pantry"
       }
     ]
   },
   "intake_output": {
     "project_spec": {
-      "site_title": "Pioneer Valley Food Bank",
-      "slug": "pioneer-valley-food-bank",
-      "cause_area": "food_security",
-      "primary_language": "en",
-      "secondary_languages": ["es"],
-      "pages": ["home", "about", "get_help", "donate", "volunteer", "contact"],
-      "brand": {
-        "primary_color": "#2E7D32",
-        "accent_color": "#FFA000",
-        "font_family": "Inter"
+      "intake": {
+        "organization_name": "Pioneer Valley Food Bank",
+        "organization_type": "nonprofit",
+        "primary_goal": "accept_donations",
+        "organization_description": "We eliminate food insecurity in Western Massachusetts through community partnerships, mobile pantries, and direct food distribution across Hampden and Hampshire counties.",
+        "target_audience": "Families and individuals experiencing food insecurity, plus local donors and volunteers.",
+        "pages": [
+          "home",
+          "about",
+          "team",
+          "donate",
+          "contact",
+          "faq"
+        ],
+        "features": [
+          "contact_form",
+          "donation_button",
+          "newsletter_signup"
+        ],
+        "tone": [
+          "friendly",
+          "inspiring",
+          "professional"
+        ],
+        "visual_style": "Warm and welcoming with rounded corners, generous whitespace, and photography of real people.",
+        "brand_colors": [
+          "#2E7D32",
+          "#FFA000"
+        ],
+        "brand_fonts": [
+          "Source Serif 4",
+          "Inter"
+        ],
+        "logo": "supabase://intake-uploads/intake/a1b2c3d4-e5f6-7890-abcd-ef1234567890/logo/0f1e2d3c.svg",
+        "brand_assets": [
+          "supabase://intake-uploads/intake/a1b2c3d4-e5f6-7890-abcd-ef1234567890/content/9a8b7c6d.pdf"
+        ],
+        "reference_sites": [
+          "https://feedingamerica.org",
+          "https://foodbankwma.org"
+        ],
+        "integrations": [
+          "stripe",
+          "google_analytics",
+          "mailchimp"
+        ],
+        "content_exclusions": "Never mention political parties or make promises of guaranteed aid."
       },
-      "tone": ["warm", "approachable", "urgent"],
-      "special_requirements": ["bilingual_page:get_help:es"],
-      "estimated_complexity": "medium"
+      "notes": {
+        "brand_colors_text": "#2E7D32 and #FFA000 (forest green and warm amber)",
+        "feature_details": "",
+        "integration_details": "",
+        "additional_info": "",
+        "dropped": []
+      }
     },
     "similar_projects": [
       {

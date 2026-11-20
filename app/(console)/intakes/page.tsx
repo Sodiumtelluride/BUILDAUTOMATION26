@@ -2,6 +2,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { auth } from "@/src/auth"
 import { CARD, NoAccess, StatusPill } from "@/src/components/dashboard-panels"
+import { settleDemo } from "@/src/lib/demo-site"
 import { listIntakes, REVIEW_ROLES } from "@/src/lib/intake-data"
 
 // Intakes page: every project request submitted through the public intake form
@@ -10,7 +11,7 @@ export default async function IntakesPage() {
   if (!session?.user) redirect("/login")
   if (!REVIEW_ROLES.includes(session.user.role)) return <NoAccess message="Only admins and reviewers can view intake forms." />
 
-  const intakes = await listIntakes()
+  const intakes = await Promise.all((await listIntakes()).map(settleDemo))
 
   return (
     <main className="space-y-6 p-6 md:p-10">
@@ -33,6 +34,7 @@ export default async function IntakesPage() {
                 <th className="px-5 py-3 font-medium">Reference</th>
                 <th className="px-5 py-3 font-medium">Submitted</th>
                 <th className="px-5 py-3 font-medium">Status</th>
+                <th className="px-5 py-3 font-medium">Demo</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -52,6 +54,17 @@ export default async function IntakesPage() {
                     {intake.createdAt?.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) ?? "—"}
                   </td>
                   <td className="px-5 py-3">{intake.status && <StatusPill status={intake.status} />}</td>
+                  <td className="px-5 py-3">
+                    {intake.demoStatus === "succeeded" && intake.demoUrl ? (
+                      <a href={intake.demoUrl} target="_blank" rel="noreferrer" className="text-zinc-100 underline underline-offset-4">
+                        Open
+                      </a>
+                    ) : intake.demoStatus ? (
+                      <StatusPill status={intake.demoStatus} />
+                    ) : (
+                      <span className="text-zinc-500">—</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

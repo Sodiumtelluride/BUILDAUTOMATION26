@@ -195,3 +195,13 @@ def map_intake_answers(
         dropped=dropped,
     )
     return intake, notes
+
+
+def to_project_spec(intake: DesignIntake, notes: IntakeNotes) -> Dict[str, Any]:
+    """What the INTAKE node writes to ``IntakeOutput.project_spec`` for DESIGN to read."""
+    return {"intake": intake.model_dump(), "notes": notes.model_dump()}
+
+
+def from_project_spec(project_spec: Mapping[str, Any]) -> Tuple[DesignIntake, IntakeNotes]:
+    """Inverse of ``to_project_spec``. Raises pydantic's ValidationError (a ValueError) on a bad shape."""
+    return DesignIntake.model_validate(project_spec.get("intake")), IntakeNotes.model_validate(project_spec.get("notes", {}))

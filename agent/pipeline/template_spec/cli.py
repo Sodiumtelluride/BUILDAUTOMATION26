@@ -2,9 +2,10 @@
 Intake answers -> design-spec.json, from the command line.
 
     python -m pipeline.template_spec.cli --answers <stored intake blob> --out design-spec.json
-        [--provider mock|anthropic] [--mock-spec <file>] [--job-id <uuid>]
+        [--provider mock|ollama|anthropic] [--mock-spec <file>] [--job-id <uuid>]
     python -m pipeline.template_spec.cli --answers <blob> --print-prompt <dir>   # system.md + user.md to paste by hand
-    python -m pipeline.template_spec.cli --answers <blob> --validate <spec.json>
+    python -m pipeline.template_spec.cli --answers <blob> --validate <reply.json> [--out design-spec.json]
+        # checks a reply saved by hand; with --out, writes the final spec the template builds from
 
 Exit codes: 0 valid, 1 invalid spec or bad input, 2 usage.
 """
@@ -20,18 +21,17 @@ from pathlib import Path
 from typing import Any, Dict, Sequence
 
 from .catalog import load_catalog
-from .generate import generate_design_spec, parse_spec_text, requested_slugs
+from .generate import finalize_spec, generate_design_spec, parse_spec_text
 from .intake_mapping import map_intake_answers
 from .prompt import render_system_prompt, render_user_message
-from .provider import DEFAULT_MOCK_SPEC, SpecProvider, anthropic_provider, mock_provider
-from .validate import validate_template_spec
+from .provider import DEFAULT_MOCK_SPEC, SpecProvider, mock_provider, provider_named
 
 
 def _parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="python -m pipeline.template_spec.cli", description=__doc__.split("\n\n")[0])
     p.add_argument("--answers", required=True, help="the stored intake blob: {version, answers, attachments, jobId}")
     p.add_argument("--out", help="where to write design-spec.json")
-    p.add_argument("--provider", choices=["mock", "anthropic"], default="mock")
+    p.add_argument("--provider", choices=["mock", "ollama", "anthropic"], default="mock")
     p.add_argument("--mock-spec", type=Path, default=DEFAULT_MOCK_SPEC, help="file the mock provider replies with")
     p.add_argument("--job-id", type=uuid.UUID, help="defaults to the blob's jobId, else a new uuid4")
     p.add_argument("--print-prompt", metavar="DIR", help="write system.md and user.md here and exit")
@@ -52,19 +52,24 @@ def main(argv: Sequence[str]) -> int:
     except (OSError, ValueError, KeyError) as exc:
         return _fail(f"cannot read intake answers from {args.answers}: {exc}")
 
+    job_id = args.job_id or (uuid.UUID(blob["jobId"]) if blob.get("jobId") else uuid.uuid4())
+    if args.out and not args.print_prompt and not Path(args.out).parent.is_dir():
+        return _fail(f"output directory does not exist: {Path(args.out).parent}")
+
     if args.validate:
         try:
             spec = parse_spec_text(Path(args.validate).read_text())  # tolerates a fenced reply saved from Claude Code
         except (OSError, ValueError) as exc:
             return _fail(f"cannot read {args.validate}: {exc}")
-        spec["job_id"] = str(args.job_id or (uuid.UUID(blob["jobId"]) if blob.get("jobId") else uuid.uuid4()))
-        issues = validate_template_spec(spec, requested_slugs=requested_slugs(intake))
+        # require_links=False: a spec that is already final (plain-string assumptions) is accepted too
+        _, _, issues = finalize_spec(spec, intake, job_id, require_links=False)
         for issue in issues:
             print(issue)
         print("valid" if not issues else f"{len(issues)} issue(s)")
+        if not issues and args.out:
+            Path(args.out).write_text(json.dumps(spec, indent=2) + "\n")
+            print(f"wrote {args.out} (job id {job_id})")
         return 1 if issues else 0
-
-    job_id = args.job_id or (uuid.UUID(blob["jobId"]) if blob.get("jobId") else uuid.uuid4())
 
     if args.print_prompt:
         out_dir = Path(args.print_prompt)
@@ -78,10 +83,8 @@ def main(argv: Sequence[str]) -> int:
         _parser().print_usage(sys.stderr)
         return _fail("--out is required unless --print-prompt or --validate is given")
     out = Path(args.out)
-    if not out.parent.is_dir():
-        return _fail(f"output directory does not exist: {out.parent}")
 
-    provider: SpecProvider = mock_provider(args.mock_spec) if args.provider == "mock" else anthropic_provider()
+    provider: SpecProvider = mock_provider(args.mock_spec) if args.provider == "mock" else provider_named(args.provider)
     result = asyncio.run(generate_design_spec(intake, notes, job_id, provider))
     if result.spec is None:
         for issue in result.issues:
