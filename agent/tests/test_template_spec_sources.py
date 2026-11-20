@@ -131,7 +131,7 @@ def test_fonts_sections_and_flags_have_sources() -> None:
     log = build_source_log(spec, _intake(), links, brand_colors_source="intake", revision=1)
     heading = _row(log, "tokens.fonts.heading")
     assert heading["source"] == "rule" and heading["fields"] == ["brand_fonts"] and "Source Serif 4" in heading["note"]
-    assert _row(log, "tokens.fonts.body")["source"] == "rule"
+    assert _row(log, "tokens.fonts.body")["source"] == "intake"  # Inter is one of the fixture's brand fonts
     hero = _row(log, "sections.hero-1")
     assert hero["source"] == "claude" and hero["fields"] == spec["pages"][0]["sections"][0]["source_fields"]
     donate = _row(log, "sections.donate-1")

@@ -248,7 +248,13 @@ BUILD_TEMPLATE_SOURCE=/path/or/git/url         # default: ../BUILD_TEMPLATE_REPO
 
 Open an intake under `/intakes` and press **Generate demo site** at the bottom. The run is detached from the
 console: reload the page to see it finish. The row's `demo_url`, `demo_status` and `demo_error` are filled from the
-job folder's `result.json` on the next page load, so restarting `next dev` mid-run is safe. The agent gets only
+job folder's `result.json` on the next page load, so restarting `next dev` mid-run is safe.
+
+The model picks one theme family for the spec; the build then moves that spec into every family the template
+offers (`pipeline/template_spec/variants.py`: type ids change by role, blocks follow the catalog, and the fonts and
+radius of a family's `theme-presets/<family>.json` apply where the template ships one) and builds and serves each.
+The intake page shows one scaled live preview per family with the agent's pick marked; `demo_url` is that pick,
+and the other URLs are read from `result.json` (`variants: [{family, url}]`). The agent gets only
 `PATH`, `HOME` and `AGENT_*`/`OLLAMA_*`/`BUILD_TEMPLATE_SOURCE`, and `ANTHROPIC_API_KEY`, never the console's `DATABASE_URL` or other secrets.
 
 **From the shell**, with the same job-folder layout:
@@ -257,13 +263,16 @@ job folder's `result.json` on the next page load, so restarting `next dev` mid-r
 python -m pipeline.run --job-dir /tmp/demo-job --provider mock < tests/fixtures/intake_answers_complete.json
 ```
 
-The job folder holds `intake.json`, `design-spec.json`, `site/`, `build.log`, `server.log`, `run.log`, `state.json`
-(final pipeline state with the source log) and `result.json`. Generating again for the same intake stops its
-previous server. Demo URLs stop working when the laptop restarts; generate again to bring one back.
+The job folder holds `intake.json`, `design-spec.json` (the model's spec), `specs/<family>.json` (one per family),
+`template/` (the clone `npm ci` ran in), `sites/<family>/` (one built site per family; `node_modules` is a
+copy-on-write copy of the template's, because Turbopack refuses one that resolves outside the project), `build.log`,
+`server-<family>.log`, `run.log`, `state.json` (final pipeline state with the source log) and `result.json`.
+Generating again for the same intake stops all of its previous servers. Demo URLs stop working when the laptop
+restarts; generate again to bring them back.
 
 Page copy is still the template's `[PLACEHOLDER]` scaffold until a CONTENT node exists. To fill it by hand, edit
-`site/content/content.json` and `site/content/seo.json` in the job folder (value shapes are in the template's
-AGENTS.md section 2), then rebuild there.
+`sites/<family>/content/content.json` and `sites/<family>/content/seo.json` in the job folder (value shapes are in
+the template's AGENTS.md section 2), then rebuild there.
 
 ### When the template's catalog changes
 
@@ -272,6 +281,7 @@ Adding a section type, a theme role or a block id changes the contract the agent
 ```bash
 (cd ../../BUILD_TEMPLATE_REPO && npm run catalog:export && npm run schema:export)
 cp ../../BUILD_TEMPLATE_REPO/lib/spec/{section-catalog.json,design-spec.schema.json} pipeline/template_spec/template/
+cp ../../BUILD_TEMPLATE_REPO/lib/spec/theme-presets/*.json pipeline/template_spec/template/theme-presets/
 BUILD_TEMPLATE_REPO=../../BUILD_TEMPLATE_REPO pytest      # the sync test must pass
 ```
 

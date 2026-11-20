@@ -27,7 +27,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from .intake import DesignIntake
 from .prompt import FLAG_FONT_SUBSTITUTED, FLAG_LOGO_UNREADABLE, FLAG_UNSUPPORTED_FEATURE
-from .validate import BODY_FONT, FEATURE_SECTIONS
+from .validate import FEATURE_SECTIONS
 
 INTAKE_FIELDS: Tuple[str, ...] = tuple(DesignIntake.model_fields)
 
@@ -132,15 +132,15 @@ def _current_entries(
         else:
             entries.append(_entry(target, value, "claude", assumptions=guesses(_COLOR_FIELDS)))
 
-    heading = tokens["fonts"]["heading"]
-    if heading in intake.brand_fonts:
-        entries.append(_entry("tokens.fonts.heading", heading, "intake", ["brand_fonts"]))
-    elif intake.brand_fonts:
-        requested = ", ".join(intake.brand_fonts)
-        entries.append(_entry("tokens.fonts.heading", heading, "rule", ["brand_fonts"], note=f"substituted for {requested}, which the template does not bundle"))
-    else:
-        entries.append(_entry("tokens.fonts.heading", heading, "claude", assumptions=guesses(_FONT_FIELDS)))
-    entries.append(_entry("tokens.fonts.body", tokens["fonts"]["body"], "rule", note=f"the template's body font is always {BODY_FONT}"))
+    for role in ("heading", "body"):
+        font = tokens["fonts"][role]
+        if font in intake.brand_fonts:
+            entries.append(_entry(f"tokens.fonts.{role}", font, "intake", ["brand_fonts"]))
+        elif intake.brand_fonts:
+            requested = ", ".join(intake.brand_fonts)
+            entries.append(_entry(f"tokens.fonts.{role}", font, "rule", ["brand_fonts"], note=f"substituted for {requested}, which the template does not bundle"))
+        else:
+            entries.append(_entry(f"tokens.fonts.{role}", font, "claude", assumptions=guesses(_FONT_FIELDS)))
     entries.append(_entry("tokens.radius", tokens["radius"], "claude", assumptions=guesses(_RADIUS_FIELDS)))
 
     feature_of = {type_id: feature for feature, type_id in FEATURE_SECTIONS.items()}

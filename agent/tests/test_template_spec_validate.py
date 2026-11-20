@@ -60,13 +60,16 @@ def test_duplicate_section_id() -> None:
 def test_font_not_bundled() -> None:
     s = _spec()
     s["tokens"]["fonts"]["heading"] = "Source Serif 4"
-    assert "tokens.fonts.heading: 'Source Serif 4' is not bundled; allowed: Inter, Instrument Serif" in validate_template_spec(s)
+    assert any(i.startswith("tokens.fonts.heading: 'Source Serif 4' is not bundled; allowed: Inter, Instrument Serif, ") for i in validate_template_spec(s))
 
 
-def test_body_font_must_be_inter() -> None:
+def test_body_font_may_be_any_text_face_but_not_a_display_face() -> None:
     s = _spec()
-    s["tokens"]["fonts"]["body"] = "Instrument Serif"
-    assert "tokens.fonts.body: must be Inter" in validate_template_spec(s)
+    s["tokens"]["fonts"]["body"] = "Red Hat Text"
+    assert validate_template_spec(s) == []
+    for display in ("Instrument Serif", "Caprasimo"):
+        s["tokens"]["fonts"]["body"] = display
+        assert f"tokens.fonts.body: {display} is a single-weight display face; use it for headings only" in validate_template_spec(s)
 
 
 def test_requested_pages_missing_and_extra() -> None:

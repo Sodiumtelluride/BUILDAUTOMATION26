@@ -99,212 +99,6 @@
         "optional": true
       }
     },
-    "hero-minimal": {
-      "hero.eyebrow": {
-        "kind": "label",
-        "optional": true
-      },
-      "hero.headline": {
-        "kind": "headline"
-      },
-      "hero.subhead": {
-        "kind": "subhead"
-      },
-      "hero.primary_cta": {
-        "kind": "cta"
-      },
-      "hero.secondary_cta": {
-        "kind": "cta",
-        "optional": true
-      },
-      "hero.image": {
-        "kind": "image",
-        "optional": true
-      }
-    },
-    "programs-minimal": {
-      "programs.headline": {
-        "kind": "headline"
-      },
-      "programs.intro": {
-        "kind": "body",
-        "optional": true
-      },
-      "programs.items": {
-        "kind": "items"
-      }
-    },
-    "stats-minimal": {
-      "stats.headline": {
-        "kind": "headline",
-        "optional": true
-      },
-      "stats.stat_1": {
-        "kind": "stat"
-      },
-      "stats.stat_2": {
-        "kind": "stat"
-      },
-      "stats.stat_3": {
-        "kind": "stat"
-      }
-    },
-    "team-minimal": {
-      "team.headline": {
-        "kind": "headline"
-      },
-      "team.intro": {
-        "kind": "body",
-        "optional": true
-      },
-      "team.members": {
-        "kind": "items"
-      }
-    },
-    "cta-minimal": {
-      "cta.headline": {
-        "kind": "headline"
-      },
-      "cta.body": {
-        "kind": "body",
-        "optional": true
-      },
-      "cta.button": {
-        "kind": "cta"
-      }
-    },
-    "page-header-minimal": {
-      "page_header.title": {
-        "kind": "headline"
-      },
-      "page_header.subhead": {
-        "kind": "subhead",
-        "optional": true
-      },
-      "page_header.cta": {
-        "kind": "cta",
-        "optional": true
-      }
-    },
-    "story-minimal": {
-      "story.headline": {
-        "kind": "headline"
-      },
-      "story.body": {
-        "kind": "body"
-      },
-      "story.image": {
-        "kind": "image",
-        "optional": true
-      },
-      "story.cta": {
-        "kind": "cta",
-        "optional": true
-      }
-    },
-    "hero-editorial": {
-      "hero.eyebrow": {
-        "kind": "label",
-        "optional": true
-      },
-      "hero.headline": {
-        "kind": "headline"
-      },
-      "hero.subhead": {
-        "kind": "subhead"
-      },
-      "hero.primary_cta": {
-        "kind": "cta"
-      },
-      "hero.secondary_cta": {
-        "kind": "cta",
-        "optional": true
-      },
-      "hero.image": {
-        "kind": "image",
-        "optional": true
-      }
-    },
-    "programs-editorial": {
-      "programs.headline": {
-        "kind": "headline"
-      },
-      "programs.intro": {
-        "kind": "body",
-        "optional": true
-      },
-      "programs.items": {
-        "kind": "items"
-      }
-    },
-    "stats-editorial": {
-      "stats.headline": {
-        "kind": "headline",
-        "optional": true
-      },
-      "stats.stat_1": {
-        "kind": "stat"
-      },
-      "stats.stat_2": {
-        "kind": "stat"
-      },
-      "stats.stat_3": {
-        "kind": "stat"
-      }
-    },
-    "team-editorial": {
-      "team.headline": {
-        "kind": "headline"
-      },
-      "team.intro": {
-        "kind": "body",
-        "optional": true
-      },
-      "team.members": {
-        "kind": "items"
-      }
-    },
-    "cta-editorial": {
-      "cta.headline": {
-        "kind": "headline"
-      },
-      "cta.body": {
-        "kind": "body",
-        "optional": true
-      },
-      "cta.button": {
-        "kind": "cta"
-      }
-    },
-    "page-header-editorial": {
-      "page_header.title": {
-        "kind": "headline"
-      },
-      "page_header.subhead": {
-        "kind": "subhead",
-        "optional": true
-      },
-      "page_header.cta": {
-        "kind": "cta",
-        "optional": true
-      }
-    },
-    "story-editorial": {
-      "story.headline": {
-        "kind": "headline"
-      },
-      "story.body": {
-        "kind": "body"
-      },
-      "story.image": {
-        "kind": "image",
-        "optional": true
-      },
-      "story.cta": {
-        "kind": "cta",
-        "optional": true
-      }
-    },
     "hero-bold": {
       "hero.eyebrow": {
         "kind": "label",
@@ -401,6 +195,339 @@
       }
     },
     "story-bold": {
+      "story.headline": {
+        "kind": "headline"
+      },
+      "story.body": {
+        "kind": "body"
+      },
+      "story.image": {
+        "kind": "image",
+        "optional": true
+      },
+      "story.cta": {
+        "kind": "cta",
+        "optional": true
+      }
+    },
+    "hero-civic": {
+      "hero.eyebrow": {
+        "kind": "label",
+        "optional": true
+      },
+      "hero.headline": {
+        "kind": "headline"
+      },
+      "hero.subhead": {
+        "kind": "subhead"
+      },
+      "hero.primary_cta": {
+        "kind": "cta"
+      },
+      "hero.secondary_cta": {
+        "kind": "cta",
+        "optional": true
+      },
+      "hero.image": {
+        "kind": "image",
+        "optional": true
+      }
+    },
+    "programs-civic": {
+      "programs.headline": {
+        "kind": "headline"
+      },
+      "programs.intro": {
+        "kind": "body",
+        "optional": true
+      },
+      "programs.items": {
+        "kind": "items"
+      }
+    },
+    "stats-civic": {
+      "stats.headline": {
+        "kind": "headline",
+        "optional": true
+      },
+      "stats.stat_1": {
+        "kind": "stat"
+      },
+      "stats.stat_2": {
+        "kind": "stat"
+      },
+      "stats.stat_3": {
+        "kind": "stat"
+      }
+    },
+    "team-civic": {
+      "team.headline": {
+        "kind": "headline"
+      },
+      "team.intro": {
+        "kind": "body",
+        "optional": true
+      },
+      "team.members": {
+        "kind": "items"
+      }
+    },
+    "cta-civic": {
+      "cta.eyebrow": {
+        "kind": "label",
+        "optional": true
+      },
+      "cta.headline": {
+        "kind": "headline"
+      },
+      "cta.body": {
+        "kind": "body",
+        "optional": true
+      },
+      "cta.steps": {
+        "kind": "items",
+        "optional": true
+      },
+      "cta.button": {
+        "kind": "cta"
+      }
+    },
+    "page-header-civic": {
+      "page_header.title": {
+        "kind": "headline"
+      },
+      "page_header.subhead": {
+        "kind": "subhead",
+        "optional": true
+      },
+      "page_header.cta": {
+        "kind": "cta",
+        "optional": true
+      }
+    },
+    "story-civic": {
+      "story.headline": {
+        "kind": "headline"
+      },
+      "story.body": {
+        "kind": "body"
+      },
+      "story.image": {
+        "kind": "image",
+        "optional": true
+      },
+      "story.cta": {
+        "kind": "cta",
+        "optional": true
+      }
+    },
+    "hero-collage": {
+      "hero.eyebrow": {
+        "kind": "label",
+        "optional": true
+      },
+      "hero.headline": {
+        "kind": "headline"
+      },
+      "hero.subhead": {
+        "kind": "subhead"
+      },
+      "hero.primary_cta": {
+        "kind": "cta"
+      },
+      "hero.secondary_cta": {
+        "kind": "cta",
+        "optional": true
+      },
+      "hero.image": {
+        "kind": "image",
+        "optional": true
+      }
+    },
+    "programs-collage": {
+      "programs.headline": {
+        "kind": "headline"
+      },
+      "programs.intro": {
+        "kind": "body",
+        "optional": true
+      },
+      "programs.items": {
+        "kind": "items"
+      }
+    },
+    "stats-collage": {
+      "stats.headline": {
+        "kind": "headline",
+        "optional": true
+      },
+      "stats.stat_1": {
+        "kind": "stat"
+      },
+      "stats.stat_2": {
+        "kind": "stat"
+      },
+      "stats.stat_3": {
+        "kind": "stat"
+      }
+    },
+    "team-collage": {
+      "team.headline": {
+        "kind": "headline"
+      },
+      "team.intro": {
+        "kind": "body",
+        "optional": true
+      },
+      "team.members": {
+        "kind": "items"
+      }
+    },
+    "cta-collage": {
+      "cta.eyebrow": {
+        "kind": "label",
+        "optional": true
+      },
+      "cta.headline": {
+        "kind": "headline"
+      },
+      "cta.body": {
+        "kind": "body",
+        "optional": true
+      },
+      "cta.steps": {
+        "kind": "items",
+        "optional": true
+      },
+      "cta.button": {
+        "kind": "cta"
+      }
+    },
+    "page-header-collage": {
+      "page_header.title": {
+        "kind": "headline"
+      },
+      "page_header.subhead": {
+        "kind": "subhead",
+        "optional": true
+      },
+      "page_header.cta": {
+        "kind": "cta",
+        "optional": true
+      }
+    },
+    "story-collage": {
+      "story.headline": {
+        "kind": "headline"
+      },
+      "story.body": {
+        "kind": "body"
+      },
+      "story.image": {
+        "kind": "image",
+        "optional": true
+      },
+      "story.cta": {
+        "kind": "cta",
+        "optional": true
+      }
+    },
+    "hero-transit": {
+      "hero.eyebrow": {
+        "kind": "label",
+        "optional": true
+      },
+      "hero.headline": {
+        "kind": "headline"
+      },
+      "hero.subhead": {
+        "kind": "subhead"
+      },
+      "hero.primary_cta": {
+        "kind": "cta"
+      },
+      "hero.secondary_cta": {
+        "kind": "cta",
+        "optional": true
+      },
+      "hero.image": {
+        "kind": "image",
+        "optional": true
+      }
+    },
+    "programs-transit": {
+      "programs.headline": {
+        "kind": "headline"
+      },
+      "programs.intro": {
+        "kind": "body",
+        "optional": true
+      },
+      "programs.items": {
+        "kind": "items"
+      }
+    },
+    "stats-transit": {
+      "stats.headline": {
+        "kind": "headline",
+        "optional": true
+      },
+      "stats.stat_1": {
+        "kind": "stat"
+      },
+      "stats.stat_2": {
+        "kind": "stat"
+      },
+      "stats.stat_3": {
+        "kind": "stat"
+      }
+    },
+    "team-transit": {
+      "team.headline": {
+        "kind": "headline"
+      },
+      "team.intro": {
+        "kind": "body",
+        "optional": true
+      },
+      "team.members": {
+        "kind": "items"
+      }
+    },
+    "cta-transit": {
+      "cta.eyebrow": {
+        "kind": "label",
+        "optional": true
+      },
+      "cta.headline": {
+        "kind": "headline"
+      },
+      "cta.body": {
+        "kind": "body",
+        "optional": true
+      },
+      "cta.steps": {
+        "kind": "items",
+        "optional": true
+      },
+      "cta.button": {
+        "kind": "cta"
+      }
+    },
+    "page-header-transit": {
+      "page_header.title": {
+        "kind": "headline"
+      },
+      "page_header.subhead": {
+        "kind": "subhead",
+        "optional": true
+      },
+      "page_header.cta": {
+        "kind": "cta",
+        "optional": true
+      }
+    },
+    "story-transit": {
       "story.headline": {
         "kind": "headline"
       },
@@ -529,24 +656,6 @@
       "story": "story-classic",
       "page-header": "page-header-classic"
     },
-    "minimal": {
-      "hero": "hero-minimal",
-      "programs": "programs-minimal",
-      "stats": "stats-minimal",
-      "team": "team-minimal",
-      "cta": "cta-minimal",
-      "story": "story-minimal",
-      "page-header": "page-header-minimal"
-    },
-    "editorial": {
-      "hero": "hero-editorial",
-      "programs": "programs-editorial",
-      "stats": "stats-editorial",
-      "team": "team-editorial",
-      "cta": "cta-editorial",
-      "story": "story-editorial",
-      "page-header": "page-header-editorial"
-    },
     "bold": {
       "hero": "hero-bold",
       "programs": "programs-bold",
@@ -555,10 +664,43 @@
       "cta": "cta-bold",
       "story": "story-bold",
       "page-header": "page-header-bold"
+    },
+    "civic": {
+      "hero": "hero-civic",
+      "programs": "programs-civic",
+      "stats": "stats-civic",
+      "team": "team-civic",
+      "cta": "cta-civic",
+      "story": "story-civic",
+      "page-header": "page-header-civic"
+    },
+    "collage": {
+      "hero": "hero-collage",
+      "programs": "programs-collage",
+      "stats": "stats-collage",
+      "team": "team-collage",
+      "cta": "cta-collage",
+      "story": "story-collage",
+      "page-header": "page-header-collage"
+    },
+    "transit": {
+      "hero": "hero-transit",
+      "programs": "programs-transit",
+      "stats": "stats-transit",
+      "team": "team-transit",
+      "cta": "cta-transit",
+      "story": "story-transit",
+      "page-header": "page-header-transit"
     }
   },
   "fonts": [
     "Inter",
-    "Instrument Serif"
+    "Instrument Serif",
+    "Schibsted Grotesk",
+    "Atkinson Hyperlegible Next",
+    "Caprasimo",
+    "Rethink Sans",
+    "Overpass",
+    "Red Hat Text"
   ]
 }

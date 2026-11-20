@@ -17,7 +17,8 @@ from .catalog import TemplateCatalog, load_catalog, load_schema
 
 MEMBER_FORM_TYPE = "member-application-form"
 FORM_RECIPE = "form_submissions"
-BODY_FONT = "Inter"
+# Single-weight display faces the template bundles for headings only (its AGENTS.md, section 5).
+HEADING_ONLY_FONTS = ("Instrument Serif", "Caprasimo")
 
 # Intake features the template can render, and the base section that renders each.
 # Features missing here get an unsupported_feature flag instead of a section.
@@ -84,8 +85,8 @@ def _font_issues(spec: Mapping[str, Any], catalog: TemplateCatalog) -> List[str]
     for role in ("heading", "body"):
         if fonts[role] not in catalog.fonts:
             issues.append(f"tokens.fonts.{role}: {fonts[role]!r} is not bundled; allowed: {allowed}")
-    if fonts["body"] in catalog.fonts and fonts["body"] != BODY_FONT:
-        issues.append(f"tokens.fonts.body: must be {BODY_FONT}")
+    if fonts["body"] in HEADING_ONLY_FONTS:
+        issues.append(f"tokens.fonts.body: {fonts['body']} is a single-weight display face; use it for headings only")
     return issues
 
 

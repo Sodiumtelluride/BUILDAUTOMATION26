@@ -33,7 +33,7 @@ def test_validate_reports_issues_and_exits_1(tmp_path: pathlib.Path, capsys: pyt
     path = tmp_path / "bad.json"
     path.write_text(json.dumps(bad))
     assert main(["--answers", ANSWERS, "--validate", str(path)]) == 1
-    assert "tokens.fonts.body: must be Inter" in capsys.readouterr().out
+    assert "tokens.fonts.body: Instrument Serif is a single-weight display face" in capsys.readouterr().out
 
 
 def test_validate_valid_file_exits_0(tmp_path: pathlib.Path) -> None:

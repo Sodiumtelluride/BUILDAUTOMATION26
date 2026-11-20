@@ -1,0 +1,27 @@
+{
+  "tokens": {
+    "colors": {
+      "background": "#FAF8F1",
+      "foreground": "#17183B",
+      "card": "#FFFFFF",
+      "card-foreground": "#17183B",
+      "popover": "#FFFFFF",
+      "popover-foreground": "#17183B",
+      "primary": "#2348C8",
+      "primary-foreground": "#FFFFFF",
+      "secondary": "#EF5B3C",
+      "secondary-foreground": "#17183B",
+      "muted": "#C4E2AE",
+      "muted-foreground": "#3F4259",
+      "accent": "#F5B82E",
+      "accent-foreground": "#17183B",
+      "destructive": "#B3261E",
+      "destructive-foreground": "#FFFFFF",
+      "border": "#DCD8CA",
+      "input": "#837F70",
+      "ring": "#2348C8"
+    },
+    "fonts": { "heading": "Caprasimo", "body": "Rethink Sans" },
+    "radius": "0.25rem"
+  }
+}
