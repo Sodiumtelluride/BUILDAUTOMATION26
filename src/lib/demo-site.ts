@@ -25,7 +25,10 @@ export type DemoFields = {
   demoStartedAt: Date | null
 }
 
-type RunResult = { status?: unknown; url?: unknown; error?: unknown; finished_at?: unknown }
+type RunResult = { status?: unknown; url?: unknown; variants?: unknown; error?: unknown; finished_at?: unknown }
+
+/** The same site built in one theme family of the template. */
+export type DemoVariant = { family: string; url: string }
 
 export function demoSitesDir(): string | null {
   return process.env.DEMO_SITES_DIR || null
@@ -79,6 +82,26 @@ function runIsAlive(dir: string): boolean {
   } catch (error) {
     return (error as NodeJS.ErrnoException).code === "EPERM"
   }
+}
+
+/** The variants listed in a run's result.json, in the agent's order; [] for anything malformed. */
+export function variantsOf(result: RunResult | null): DemoVariant[] {
+  if (!Array.isArray(result?.variants)) return []
+  return result.variants.flatMap((v: unknown) => {
+    const { family, url } = (v ?? {}) as { family?: unknown; url?: unknown }
+    return typeof family === "string" && typeof url === "string" ? [{ family, url }] : []
+  })
+}
+
+/**
+ * Every family the finished build serves, read from the job folder (the row keeps only the agent's pick as demo_url).
+ * Empty when the folder is gone or the build is not a finished success.
+ */
+export function demoVariants(row: DemoFields & { id: string }): DemoVariant[] {
+  const root = demoSitesDir()
+  if (!root || row.demoStatus !== "succeeded") return []
+  const result = readResult(jobDir(root, row.id))
+  return result?.status === "succeeded" && result.url === row.demoUrl ? variantsOf(result) : []
 }
 
 /** If the row's build is "running", finish it from result.json or a dead process. Returns the row as it now stands. */

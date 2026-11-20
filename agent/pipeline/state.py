@@ -173,7 +173,9 @@ class CodeGenerationOutput(BaseModel):
 
     repo_url: str
     preview_url: Optional[str] = None
-    """Where the built demo is being served (local: http://localhost:<port>)."""
+    """Where the built demo is being served (local: http://localhost:<port>), in the family the design spec chose."""
+    preview_variants: Dict[str, str] = Field(default_factory=dict)
+    """theme family -> URL of the same site built in that family, in the template catalog's order."""
     template_commit: Optional[str] = None
     """The site template commit the demo was built from."""
     test_results: Dict[str, Any] = Field(default_factory=dict)

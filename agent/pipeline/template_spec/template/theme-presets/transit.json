@@ -1,0 +1,27 @@
+{
+  "tokens": {
+    "colors": {
+      "background": "#ECEAE4",
+      "foreground": "#17191C",
+      "card": "#FFFFFF",
+      "card-foreground": "#17191C",
+      "popover": "#FFFFFF",
+      "popover-foreground": "#17191C",
+      "primary": "#D4351C",
+      "primary-foreground": "#FFFFFF",
+      "secondary": "#007A5E",
+      "secondary-foreground": "#FFFFFF",
+      "muted": "#DDDAD2",
+      "muted-foreground": "#54575B",
+      "accent": "#FFC72C",
+      "accent-foreground": "#17191C",
+      "destructive": "#A30D1F",
+      "destructive-foreground": "#FFFFFF",
+      "border": "#C8C5BC",
+      "input": "#84868A",
+      "ring": "#17191C"
+    },
+    "fonts": { "heading": "Overpass", "body": "Red Hat Text" },
+    "radius": "0rem"
+  }
+}

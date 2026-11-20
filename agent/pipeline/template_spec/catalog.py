@@ -3,6 +3,7 @@ The site template's contract, vendored from BUILD_TEMPLATE_REPO/lib/spec:
 
   - design-spec.schema.json  (npm run schema:export)   -> load_schema()
   - section-catalog.json     (npm run catalog:export)  -> load_catalog()
+  - theme-presets/<family>.json (copied as is)         -> load_presets()
 
 Never hand-edit the files under template/. tests/test_template_spec_catalog.py
 checks them byte-for-byte against the template checkout when
@@ -41,6 +42,10 @@ class TemplateCatalog:
     def theme_of(self, type_id: str) -> Optional[str]:
         return next((theme for theme, roles in self.themes.items() if type_id in roles.values()), None)
 
+    def role_of(self, type_id: str) -> Optional[str]:
+        """The theme role (hero, programs, ...) a themed type id fills; None for base sections."""
+        return next((role for roles in self.themes.values() for role, tid in roles.items() if tid == type_id), None)
+
 
 @lru_cache(maxsize=1)
 def load_catalog() -> TemplateCatalog:
@@ -50,6 +55,16 @@ def load_catalog() -> TemplateCatalog:
         for type_id, blocks in raw["catalog"].items()
     }
     return TemplateCatalog(types=types, themes=raw["themes"], fonts=tuple(raw["fonts"]))
+
+
+@lru_cache(maxsize=1)
+def load_presets() -> Dict[str, Dict[str, Any]]:
+    """family -> the reference ``tokens`` (colors, fonts, radius) the template designed that family with.
+    Only the families that ship a preset appear."""
+    return {
+        path.stem: json.loads(path.read_text())["tokens"]
+        for path in sorted((TEMPLATE_DIR / "theme-presets").glob("*.json"))
+    }
 
 
 @lru_cache(maxsize=1)

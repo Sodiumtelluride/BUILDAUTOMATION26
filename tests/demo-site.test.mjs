@@ -10,7 +10,7 @@ register("./helpers/typescript-loader.mjs", import.meta.url, { data: { mocks: {
   "@/src/db": `data:text/javascript,${encodeURIComponent("export function getDb() { return globalThis.__fakeDb; }")}`,
 } } });
 
-const { START_GRACE_MS, settlement, settleDemo, startDemoBuild } = await import("../src/lib/demo-site.ts");
+const { START_GRACE_MS, demoVariants, settlement, settleDemo, startDemoBuild, variantsOf } = await import("../src/lib/demo-site.ts");
 
 const ID = "3f2b8c1e-7a4d-4e5f-9b6a-1c2d3e4f5a6b";
 const NOTES = JSON.stringify({ version: 1, answers: { organizationName: "Org" }, attachments: [], organizationId: "o", jobId: "j" });
@@ -67,6 +67,21 @@ test("settleDemo writes the outcome of a finished run and leaves other rows alon
   const done = { ...row, demoStatus: "succeeded" };
   assert.equal(await settleDemo(done), done);
   assert.equal(updates.length, 1);
+});
+
+test("the finished run's variants are read from the job folder, only while they match the row", async () => {
+  const variants = [{ family: "classic", url: "http://localhost:8" }, { family: "bold", url: "http://localhost:9" }];
+  assert.deepEqual(variantsOf({ status: "succeeded", variants: [...variants, { family: 3 }, null] }), variants);
+  assert.deepEqual(variantsOf({ status: "succeeded" }), []);
+  const dir = path.join(root, ID);
+  await mkdir(dir);
+  await writeFile(path.join(dir, "result.json"), JSON.stringify({ status: "succeeded", url: "http://localhost:9", variants, finished_at: new Date().toISOString() }));
+  const row = { id: ID, demoStatus: "succeeded", demoUrl: "http://localhost:9", demoError: null, demoStartedAt: new Date() };
+  assert.deepEqual(demoVariants(row), variants);
+  assert.deepEqual(demoVariants({ ...row, demoUrl: "http://localhost:1" }), []); // an older row than the folder
+  assert.deepEqual(demoVariants({ ...row, demoStatus: "running" }), []);
+  delete process.env.DEMO_SITES_DIR;
+  assert.deepEqual(demoVariants(row), []);
 });
 
 test("a second click while a build is running is refused", async () => {

@@ -69,7 +69,7 @@ async def test_exhausted_retries_flag_the_job_for_human_review() -> None:
     assert set(result) == {"review_flag"} and len(seen) == 2
     flag = result["review_flag"]
     assert flag.reason == ReviewReason.STAGE_ERROR_THRESHOLD and flag.flagged_by_stage == StageEnum.DESIGN
-    assert "2 attempts" in flag.reviewer_notes and "tokens.fonts.body: must be Inter" in flag.reviewer_notes
+    assert "2 attempts" in flag.reviewer_notes and "tokens.fonts.body: Instrument Serif is a single-weight display face" in flag.reviewer_notes
 
 
 async def test_rerun_sends_the_previous_spec_and_notes_and_keeps_section_ids() -> None:

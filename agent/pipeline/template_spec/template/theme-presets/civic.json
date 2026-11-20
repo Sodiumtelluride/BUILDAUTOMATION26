@@ -1,0 +1,30 @@
+{
+  "tokens": {
+    "colors": {
+      "background": "#F6F7F8",
+      "foreground": "#1C2024",
+      "card": "#FFFFFF",
+      "card-foreground": "#1C2024",
+      "popover": "#FFFFFF",
+      "popover-foreground": "#1C2024",
+      "primary": "#6B1525",
+      "primary-foreground": "#FFFFFF",
+      "secondary": "#2F4A42",
+      "secondary-foreground": "#FFFFFF",
+      "muted": "#E9ECEE",
+      "muted-foreground": "#535B63",
+      "accent": "#F1E3E5",
+      "accent-foreground": "#4A0E19",
+      "destructive": "#B42318",
+      "destructive-foreground": "#FFFFFF",
+      "border": "#C9CED3",
+      "input": "#7A838B",
+      "ring": "#6B1525"
+    },
+    "fonts": {
+      "heading": "Schibsted Grotesk",
+      "body": "Atkinson Hyperlegible Next"
+    },
+    "radius": "0.25rem"
+  }
+}

@@ -52,7 +52,7 @@ async def test_repair_round_includes_previous_issues() -> None:
 
     result = await generate_design_spec(intake, notes, JOB, provider)
     assert result.spec is not None and result.attempts == 2
-    assert "tokens.fonts.body: must be Inter" in seen[1] and "must be Inter" not in seen[0]
+    assert "tokens.fonts.body: Instrument Serif is a single-weight display face" in seen[1] and "display face" not in seen[0]
     assert json.dumps(bad) in seen[1], "the repair message must carry the previous reply"
 
 

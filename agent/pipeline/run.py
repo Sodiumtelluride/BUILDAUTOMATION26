@@ -7,7 +7,11 @@ stdin is the JSON the intake API stores in intake_submissions.notes. The run
 always ends by writing ``<job-dir>/result.json`` (atomically), whatever
 happens, and prints the same JSON as one line:
 
-    {"status": "succeeded", "url": "http://localhost:PORT", "template_commit": "...", "flags": [...], "finished_at": "..."}
+    {"status": "succeeded", "url": "http://localhost:PORT", "variants": [{"family": "classic", "url": "..."}, ...],
+     "template_commit": "...", "flags": [...], "finished_at": "..."}
+
+``url`` is the site in the family the design spec chose; ``variants`` lists the same site in every
+family the template offers, in the template's order.
     {"status": "failed", "error": "...", "finished_at": "..."}
 
 The admin console reads result.json to finish the intake row, so it does not
@@ -58,6 +62,7 @@ def outcome(state: PipelineState) -> Dict[str, Any]:
     return {
         "status": "succeeded",
         "url": built.preview_url,
+        "variants": [{"family": family, "url": url} for family, url in built.preview_variants.items()],
         "template_commit": built.template_commit,
         "flags": list((spec or {}).get("flags", [])),
     }

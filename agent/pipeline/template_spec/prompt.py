@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence
 from .catalog import TemplateCatalog
 from .intake import PAGE_SLUGS, DesignIntake
 from .intake_mapping import IntakeNotes
-from .validate import FEATURE_SECTIONS, MEMBER_FORM_TYPE
+from .validate import FEATURE_SECTIONS, HEADING_ONLY_FONTS, MEMBER_FORM_TYPE
 
 FLAG_FONT_SUBSTITUTED = "font_substituted"
 FLAG_UNSUPPORTED_FEATURE = "unsupported_feature"
@@ -171,6 +171,7 @@ def _theme_lines(catalog: TemplateCatalog) -> List[str]:
 def render_system_prompt(catalog: TemplateCatalog) -> str:
     """The static instructions: contract, catalog, families, rules, example."""
     fonts = ", ".join(catalog.fonts)
+    display = " and ".join(HEADING_ONLY_FONTS)
     color_roles = ", ".join(_EXAMPLE_COLORS)
     slug_lines = [f"- {name} -> {slug}" for name, slug in PAGE_SLUGS.items()]
     lines = [
@@ -181,7 +182,7 @@ def render_system_prompt(catalog: TemplateCatalog) -> str:
         "1. Contract (every key is required):",
         "- job_id: the job id given in the message, copied exactly.",
         f"- tokens.colors: an object keyed by these shadcn roles, hyphenated, hex values (#RRGGBB): {color_roles}.",
-        f"- tokens.fonts: {{heading, body}}. heading must be one of: {fonts}. body must be Inter.",
+        f"- tokens.fonts: {{heading, body}}. Both must be bundled fonts: {fonts}. {display} are display faces for heading only.",
         "- tokens.radius: one CSS length such as 0.5rem or 0.75rem.",
         "- tokens.contrast_adjustments: one {role, from, to} for each brand color you changed to meet contrast",
         "  (from = the client's hex, to = the value you put in tokens.colors[role]); [] when you changed none.",
@@ -205,9 +206,11 @@ def render_system_prompt(catalog: TemplateCatalog) -> str:
         "3. Theme families (one visual treatment per role):",
         *_theme_lines(catalog),
         "Use ONE family for the whole site. Default to bold (high-contrast and energetic); pick another only when the",
-        "tone and visual style clearly ask for it (classic = balanced, minimal = quiet and spacious, editorial =",
-        "type-led and story-driven), and say why in assumptions. Use only that family's type ids for the themed",
-        "roles. Sections marked [any family] are base sections with one look everywhere; use them with any family.",
+        "tone and visual style clearly ask for it (classic = balanced and conventional, civic = institutional and",
+        "trustworthy, collage = playful cut-paper layers, transit = signage-like with flat color and sharp corners),",
+        "and say why in assumptions. Use only that family's type ids for the themed roles. Sections marked",
+        "[any family] are base sections with one look everywhere; use them with any family.",
+        "The pipeline also builds the same site in every other family for comparison, so pick the one that fits best.",
         "",
         "4. Pages: produce exactly the requested pages, no others, with these slugs:",
         *slug_lines,
@@ -223,7 +226,8 @@ def render_system_prompt(catalog: TemplateCatalog) -> str:
         "If a brand color fails that, darken or lighten it just enough and record it in tokens.contrast_adjustments.",
         "",
         f"6. Fonts: if the intake names fonts outside [{fonts}], use the closest allowed pair (serif-looking headings ->",
-        f"Instrument Serif, otherwise Inter) and add a flag with code \"{FLAG_FONT_SUBSTITUTED}\" naming the requested fonts.",
+        "Instrument Serif, otherwise a sans heading with a readable sans body such as Inter) and add a flag with code",
+        f"\"{FLAG_FONT_SUBSTITUTED}\" naming the requested fonts. Without brand fonts, Instrument Serif / Inter is a safe pair.",
         "",
         "7. A requested feature with a section in the catalog MUST get that section, and that section appears only",
         "when its feature was requested:",

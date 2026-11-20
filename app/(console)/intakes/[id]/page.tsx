@@ -2,7 +2,7 @@ import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 import { auth } from "@/src/auth"
 import { CARD, NoAccess, StatusPill } from "@/src/components/dashboard-panels"
-import { demoSitesDir, settleDemo, type DemoFields } from "@/src/lib/demo-site"
+import { demoSitesDir, demoVariants, settleDemo, type DemoFields, type DemoVariant } from "@/src/lib/demo-site"
 import { answerGroups, getIntake, REVIEW_ROLES } from "@/src/lib/intake-data"
 import { generateDemoSite } from "./actions"
 
@@ -101,13 +101,13 @@ export default async function IntakeDetailPage({ params }: { params: Promise<{ i
           </pre>
         </details>
       )}
-      <DemoSiteCard intake={intake} enabled={demoSitesDir() !== null} />
+      <DemoSiteCard intake={intake} enabled={demoSitesDir() !== null} variants={demoVariants(intake)} />
     </main>
   )
 }
 
-/** The local demo build: status, link or error, and the button that starts a run. */
-function DemoSiteCard({ intake, enabled }: { intake: DemoFields & { id: string }; enabled: boolean }) {
+/** The local demo build: status, one tile per theme family (or the single link), an error, and the button that starts a run. */
+function DemoSiteCard({ intake, enabled, variants }: { intake: DemoFields & { id: string }; enabled: boolean; variants: DemoVariant[] }) {
   if (!enabled && !intake.demoStatus) return null
   const running = intake.demoStatus === "running"
   return (
@@ -120,14 +120,15 @@ function DemoSiteCard({ intake, enabled }: { intake: DemoFields & { id: string }
         {running && (
           <p className="text-zinc-400">
             Building since {intake.demoStartedAt?.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) ?? "just now"}.
-            This takes several minutes; reload the page to check.
+            The site is built once per theme family, so this takes several minutes; reload the page to check.
           </p>
         )}
-        {intake.demoStatus === "succeeded" && intake.demoUrl && (
+        {intake.demoStatus === "succeeded" && intake.demoUrl && variants.length === 0 && (
           <a href={intake.demoUrl} target="_blank" rel="noreferrer" className="font-medium text-zinc-100 underline underline-offset-4">
             {intake.demoUrl}
           </a>
         )}
+        {intake.demoStatus === "succeeded" && variants.length > 0 && <StyleGallery variants={variants} chosenUrl={intake.demoUrl} />}
         {intake.demoStatus === "failed" && intake.demoError && (
           <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg bg-black/40 p-3 text-xs text-zinc-300">{intake.demoError}</pre>
         )}
@@ -147,5 +148,43 @@ function DemoSiteCard({ intake, enabled }: { intake: DemoFields & { id: string }
         <p className="mt-4 text-xs text-zinc-500">Demo builds run only on the machine with DEMO_SITES_DIR set.</p>
       )}
     </section>
+  )
+}
+
+/**
+ * The same site in every theme family: a scaled live preview of each, the agent's own pick marked.
+ * The iframe is rendered four times wider than its tile and scaled to a quarter, so each preview shows a desktop layout.
+ */
+function StyleGallery({ variants, chosenUrl }: { variants: DemoVariant[]; chosenUrl: string | null }) {
+  return (
+    <div>
+      <p className="text-zinc-400">
+        {variants.length} styles of the same site. The agent picked {variants.find((v) => v.url === chosenUrl)?.family ?? "one"} for this intake.
+      </p>
+      <ul className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {variants.map(({ family, url }) => (
+          <li key={family} className="overflow-hidden rounded-xl border border-white/10 bg-black/30">
+            <div className="flex items-center justify-between gap-3 px-3 py-2">
+              <p className="flex items-center gap-2 text-sm">
+                <span className="font-medium capitalize text-zinc-100">{family}</span>
+                {url === chosenUrl && <span className="rounded-full border border-white/10 px-2 py-0.5 text-xs text-zinc-300">Agent&apos;s pick</span>}
+              </p>
+              <a href={url} target="_blank" rel="noreferrer" className="text-xs text-zinc-300 underline underline-offset-4 hover:text-zinc-100">
+                Open ↗
+              </a>
+            </div>
+            <a href={url} target="_blank" rel="noreferrer" aria-label={`Open the ${family} style`} className="relative block aspect-[4/3] overflow-hidden bg-white">
+              <iframe
+                src={url}
+                title={`${family} style preview`}
+                loading="lazy"
+                tabIndex={-1}
+                className="pointer-events-none absolute left-0 top-0 h-[400%] w-[400%] origin-top-left scale-25 border-0"
+              />
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }
