@@ -10,10 +10,13 @@
 export const REFERENCE_NO_RE = /^INT-\d{8}-[A-F0-9]{6}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// DESIGN_SELECTION is the submitter's own step (not a pipeline stage): the
+// pipeline builds design options, waits for their pick, then writes content.
 export const PIPELINE_STEPS = [
   { key: "INTAKE", label: "Reading your answers" },
-  { key: "DESIGN", label: "Designing your layout" },
-  { key: "CODE_GENERATION", label: "Building your pages" },
+  { key: "DESIGN", label: "Planning your design" },
+  { key: "CODE_GENERATION", label: "Building your design options" },
+  { key: "DESIGN_SELECTION", label: "Choosing your design" },
   { key: "CONTENT", label: "Writing your content" },
   { key: "SEO", label: "Preparing for search engines" },
   { key: "APPROVAL_GATE", label: "BUILD team review" },
@@ -22,7 +25,8 @@ export const PIPELINE_STEPS = [
 
 export type StepKey = (typeof PIPELINE_STEPS)[number]["key"];
 export type StepState = "pending" | "active" | "done" | "failed";
-export type PublicPhase = "queued" | "generating" | "in_review" | "publishing" | "live" | "failed";
+// choosing_design: the submitter must pick one of the generated designs (see design-options.ts).
+export type PublicPhase = "queued" | "generating" | "choosing_design" | "in_review" | "publishing" | "live" | "failed";
 
 export interface PublicJobStatus {
   referenceNo: string;
@@ -46,6 +50,7 @@ export interface StageRow {
 }
 
 const REVIEW_INDEX = PIPELINE_STEPS.findIndex((s) => s.key === "APPROVAL_GATE");
+export const SELECTION_INDEX = PIPELINE_STEPS.findIndex((s) => s.key === "DESIGN_SELECTION");
 const DEPLOY_INDEX = PIPELINE_STEPS.findIndex((s) => s.key === "DEPLOYMENT");
 
 /** Decodes and normalizes a reference number from a URL. Never throws. */
@@ -89,6 +94,9 @@ function stepIndex(stage: string | null | undefined): number {
 function phaseFor(status: string | null, liveUrl: string | null): PublicPhase {
   switch (status) {
     case "in_progress": return "generating";
+    // Proposed, not yet in the intake_job_status enum: designs are built and
+    // the pipeline is waiting for the submitter's choice.
+    case "awaiting_selection": return "choosing_design";
     case "awaiting_review": return "in_review";
     case "approved": return "publishing";
     // A deployed job without a usable URL is still "publishing" to the submitter.
@@ -122,6 +130,7 @@ export function toPublicJobStatus(referenceNo: string, job: JobRow, stageRows: S
   // The job status is the source of truth for the coarse position.
   if (phase === "queued") activeIndex = -1;
   if (phase === "generating") activeIndex = Math.min(Math.max(activeIndex, 0), REVIEW_INDEX - 1);
+  if (phase === "choosing_design") activeIndex = SELECTION_INDEX;
   if (phase === "in_review") activeIndex = REVIEW_INDEX;
   if (phase === "publishing") activeIndex = DEPLOY_INDEX;
   if (phase === "live") activeIndex = PIPELINE_STEPS.length;
@@ -151,7 +160,8 @@ export function pollDelayMs(phase: PublicPhase | null): number | null {
     case "live":
     case "failed":
       return null;
-    // A human is involved; checking every few seconds just burns requests.
+    // A human is involved (the submitter choosing, or BUILD reviewing).
+    case "choosing_design":
     case "in_review":
     case "publishing":
       return 30_000;

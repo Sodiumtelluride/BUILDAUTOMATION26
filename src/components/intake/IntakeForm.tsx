@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Check, ChevronLeft, ChevronRight, LoaderCircle, Upload, X } from "lucide-react";
 import { IntakeSubmissionError, submitIntake } from "./submission";
 import { statusPagePath } from "@/src/lib/intake/job-status";
+import { IntakeHeader, IntakeShell, IntakeHeading } from "./IntakeShell";
 import {
   CONTENT_OPTIONS,
   CONTENT_PARTIAL,
@@ -930,14 +931,11 @@ function ReviewAnswers({ data, onEdit }: { data: IntakeFormData; onEdit: (sectio
 // status page, and as a fallback link if client navigation doesn't happen.
 function SuccessScreen({ referenceNo }: { referenceNo: string }) {
   return (
-    <main className="min-h-dvh bg-black flex flex-col items-center justify-center px-6 py-12 text-center">
-      <div className="w-20 h-20 rounded-full bg-[#DC4436] flex items-center justify-center mb-8">
-        <Check size={40} className="text-white" aria-hidden="true" />
-      </div>
-      <h1 tabIndex={-1} ref={(element) => element?.focus()} className="text-4xl sm:text-5xl font-black text-white mb-4 tracking-tight outline-none">Project received.</h1>
-      <p className="text-gray-300 text-base max-w-sm leading-relaxed" role="status">Taking you to your project&apos;s progress page…</p>
-      <Link href={statusPagePath(referenceNo)} className="mt-8 min-h-11 rounded-full px-5 py-3 text-sm font-semibold text-white underline underline-offset-4 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white">Go to progress page</Link>
-    </main>
+    <IntakeShell subtitle="Website project intake">
+      <IntakeHeading>Project received.</IntakeHeading>
+      <p className="text-sm leading-relaxed text-gray-300" role="status">Taking you to your project&apos;s progress page…</p>
+      <Link href={statusPagePath(referenceNo)} className="mt-6 inline-flex min-h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-black hover:bg-gray-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Go to progress page</Link>
+    </IntakeShell>
   );
 }
 
@@ -1067,10 +1065,7 @@ export function IntakeForm() {
   return (
     <main className="min-h-dvh bg-black px-4 py-6 sm:px-6 sm:py-10 [color-scheme:light]">
       <div className="mx-auto w-full max-w-xl">
-        <header className="mb-8 flex items-center justify-between gap-4 border-b border-white/15 pb-5">
-          <Link href="/" className="rounded text-xl font-black tracking-tight text-white focus-visible:outline-2 focus-visible:outline-white">BUILD<span className="text-[#FF7A6E]">.</span></Link>
-          <span className="text-sm text-gray-400">Website project intake</span>
-        </header>
+        <IntakeHeader subtitle="Website project intake" />
         <p className="text-gray-400 text-sm mb-2" aria-live="polite" aria-atomic="true">
           Step {section + 1} of {SECTION_TITLES.length}
         </p>
