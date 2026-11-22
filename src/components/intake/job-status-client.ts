@@ -1,11 +1,12 @@
 import { PIPELINE_STEPS, type PublicJobStatus, type PublicPhase } from "@/src/lib/intake/job-status";
+import { getMockJourney, isIntakeMockEnabled } from "./mock-journey";
 
 export type StatusResult =
   | { kind: "ok"; data: PublicJobStatus }
   | { kind: "not_found" }
   | { kind: "error" };
 
-const PHASES: PublicPhase[] = ["queued", "generating", "in_review", "publishing", "live", "failed"];
+const PHASES: PublicPhase[] = ["queued", "generating", "choosing_design", "in_review", "publishing", "live", "failed"];
 const STATES = ["pending", "active", "done", "failed"];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -36,4 +37,16 @@ export async function fetchJobStatus(referenceNo: string, signal?: AbortSignal, 
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok || !isRecord(body) || body.success !== true || !isPublicJobStatus(body.data)) return { kind: "error" };
   return { kind: "ok", data: body.data };
+}
+
+export type StatusFetcher = (referenceNo: string, signal?: AbortSignal) => Promise<StatusResult>;
+
+/** The real API, or the shared mock journey when NEXT_PUBLIC_INTAKE_MOCK=1. */
+export function getStatusFetcher(): StatusFetcher {
+  if (!isIntakeMockEnabled()) return (referenceNo, signal) => fetchJobStatus(referenceNo, signal);
+  const journey = getMockJourney();
+  return async (referenceNo) => {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    return { kind: "ok", data: journey.status(referenceNo) };
+  };
 }

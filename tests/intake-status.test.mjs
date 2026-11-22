@@ -71,7 +71,7 @@ test("running stages show earlier steps done and the running one active", () => 
     { stage: "CODE_GENERATION", status: "running", attempt: 1 },
   ]);
   assert.equal(status.phase, "generating");
-  assert.deepEqual(states(status), ["done", "done", "active", "pending", "pending", "pending", "pending"]);
+  assert.deepEqual(states(status), ["done", "done", "active", "pending", "pending", "pending", "pending", "pending"]);
 });
 
 test("a retried stage uses its latest attempt", () => {
@@ -87,7 +87,7 @@ test("awaiting review never exposes a link, even if a preview exists", () => {
   const status = toPublicJobStatus("INT-20261117-ABC123", job({ status: "awaiting_review", liveUrl: "https://example.org" }));
   assert.equal(status.phase, "in_review");
   assert.equal(status.liveUrl, null);
-  assert.deepEqual(states(status), ["done", "done", "done", "done", "done", "active", "pending"]);
+  assert.deepEqual(states(status), ["done", "done", "done", "done", "done", "done", "active", "pending"]);
 });
 
 test("deployed jobs expose the live URL and finish every step", () => {
